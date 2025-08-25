@@ -1,0 +1,441 @@
+<UserControl x:Class="ALGAE.Views.GameDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1000">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <materialDesign:Card Grid.Row="0" Margin="16,16,16,20" Padding="32">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Game Icon -->
+                <Border Grid.Column="0"
+                        Width="64" Height="64" 
+                        Background="{DynamicResource PrimaryHueLightBrush}"
+                        CornerRadius="8"
+                        Margin="0,0,16,0">
+                    <materialDesign:PackIcon Kind="Controller" 
+                                             Width="32" Height="32" 
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center"
+                                             Foreground="White"/>
+                </Border>
+
+                <!-- Game Info -->
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Game.Name, FallbackValue='Game Name'}" 
+                               Style="{StaticResource MaterialDesignHeadline4TextBlock}"
+                               FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding Game.Publisher, FallbackValue='Publisher'}" 
+                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                               Margin="0,4,0,0"/>
+                    <TextBlock Text="{Binding Game.Description, FallbackValue='Game description'}" 
+                               Style="{StaticResource MaterialDesignBody2TextBlock}"
+                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                               TextWrapping="Wrap"
+                               MaxWidth="400"
+                               Margin="0,8,0,0"/>
+                </StackPanel>
+
+                <!-- Action Buttons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Command="{Binding RefreshCommand}"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            ToolTip="Refresh game data"
+                            Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Refresh" Width="18" Height="18" Margin="0,0,8,0"/>
+                            <TextBlock Text="Refresh"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </materialDesign:Card>
+
+        <!-- Main Content with Tabs -->
+        <materialDesign:Card Grid.Row="1" Margin="16,0,16,16">
+            <TabControl Style="{StaticResource MaterialDesignFilledTabControl}" 
+                        materialDesign:ColorZoneAssist.Mode="PrimaryMid"
+                        TabStripPlacement="Top">
+                
+                <!-- Game Info Tab -->
+                <TabItem Header="Game Info">
+                    <TabItem.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="InformationOutline" Width="20" Height="20" Margin="0,0,8,0"/>
+                                <TextBlock Text="Info"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </TabItem.HeaderTemplate>
+                    
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="32">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- Left Column -->
+                            <StackPanel Grid.Column="0" Margin="0,0,24,0">
+                                <TextBlock Text="Basic Information" 
+                                           Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                           Margin="0,0,0,20"/>
+                                
+                                <materialDesign:Card Padding="20" Margin="0,0,0,20">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                                            <TextBlock Text="Short Name" Style="{StaticResource MaterialDesignBody2TextBlock}" Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                                            <TextBlock Text="{Binding Game.ShortName, FallbackValue='N/A'}" Style="{StaticResource MaterialDesignBody1TextBlock}"/>
+                                        </StackPanel>
+                                        
+                                        <StackPanel Grid.Row="1" Margin="0,0,0,12">
+                                            <TextBlock Text="Version" Style="{StaticResource MaterialDesignBody2TextBlock}" Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                                            <TextBlock Text="{Binding Game.Version, FallbackValue='N/A'}" Style="{StaticResource MaterialDesignBody1TextBlock}"/>
+                                        </StackPanel>
+                                        
+                                        <StackPanel Grid.Row="2" Margin="0,0,0,12">
+                                            <TextBlock Text="Theme" Style="{StaticResource MaterialDesignBody2TextBlock}" Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                                            <TextBlock Text="{Binding Game.ThemeName, FallbackValue='N/A'}" Style="{StaticResource MaterialDesignBody1TextBlock}"/>
+                                        </StackPanel>
+                                        
+                                        <StackPanel Grid.Row="3" Margin="0,0,0,12">
+                                            <TextBlock Text="Executable" Style="{StaticResource MaterialDesignBody2TextBlock}" Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                                            <TextBlock Text="{Binding Game.ExecutableName, FallbackValue='N/A'}" Style="{StaticResource MaterialDesignBody1TextBlock}"/>
+                                        </StackPanel>
+                                        
+                                        <StackPanel Grid.Row="4">
+                                            <TextBlock Text="Arguments" Style="{StaticResource MaterialDesignBody2TextBlock}" Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                                            <TextBlock Text="{Binding Game.GameArgs, FallbackValue='N/A'}" Style="{StaticResource MaterialDesignBody1TextBlock}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </materialDesign:Card>
+                            </StackPanel>
+                            
+                            <!-- Right Column -->
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Installation Details" 
+                                           Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                           Margin="0,0,0,20"/>
+                                
+                                <materialDesign:Card Padding="20">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                                            <TextBlock Text="Install Path" Style="{StaticResource MaterialDesignBody2TextBlock}" Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                                            <TextBlock Text="{Binding Game.InstallPath, FallbackValue='N/A'}" 
+                                                       Style="{StaticResource MaterialDesignBody1TextBlock}" 
+                                                       TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                        
+                                        <StackPanel Grid.Row="1">
+                                            <TextBlock Text="Working Directory" Style="{StaticResource MaterialDesignBody2TextBlock}" Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                                            <TextBlock Text="{Binding Game.GameWorkingPath, FallbackValue='Same as install path'}" 
+                                                       Style="{StaticResource MaterialDesignBody1TextBlock}" 
+                                                       TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </materialDesign:Card>
+                            </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
+                </TabItem>
+                
+                <!-- Profiles Tab -->
+                <TabItem Header="Profiles">
+                    <TabItem.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="AccountMultiple" Width="20" Height="20" Margin="0,0,8,0"/>
+                                <TextBlock Text="Profiles"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </TabItem.HeaderTemplate>
+                    
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <!-- Profiles Toolbar -->
+                        <materialDesign:Card Grid.Row="0" Margin="24,24,24,12" Padding="20">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="AccountMultiple" Width="20" Height="20" Margin="0,0,8,0" 
+                                                             Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                    <TextBlock Text="Game Profiles" Style="{StaticResource MaterialDesignSubtitle1TextBlock}"/>
+                                    <TextBlock Text="{Binding Profiles.Count, StringFormat=' ({0})'}" 
+                                               Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                                </StackPanel>
+                                
+                                <Button Grid.Column="1" 
+                                        Command="{Binding AddProfileCommand}"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        ToolTip="Add new profile">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Plus" Width="16" Height="16" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Add Profile"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </materialDesign:Card>
+                        
+                        <!-- Profiles List -->
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="24,0,24,24">
+                            <Grid>
+                                <!-- Empty State -->
+                                <StackPanel Visibility="{Binding HasProfiles, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"
+                                            HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,50,0,0">
+                                    <materialDesign:PackIcon Kind="AccountMultipleOutline" Width="48" Height="48" 
+                                                             Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                             HorizontalAlignment="Center"/>
+                                    <TextBlock Text="No profiles created yet" 
+                                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               HorizontalAlignment="Center" Margin="0,16,0,8"/>
+                                    <TextBlock Text="Create profiles to launch this game with different configurations." 
+                                               Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               HorizontalAlignment="Center" TextAlignment="Center"
+                                               TextWrapping="Wrap" MaxWidth="300"/>
+                                </StackPanel>
+                                
+                                <!-- Profiles -->
+                                <ItemsControl ItemsSource="{Binding Profiles}"
+                                              Visibility="{Binding HasProfiles, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <materialDesign:Card Margin="0,0,0,12" Padding="16">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                
+                                                <!-- Profile Icon -->
+                                                <Border Grid.Column="0" Width="40" Height="40" 
+                                                        Background="{DynamicResource SecondaryHueLightBrush}"
+                                                        CornerRadius="20" Margin="0,0,16,0">
+                                                    <materialDesign:PackIcon Kind="Account" Width="20" Height="20" 
+                                                                             Foreground="White" 
+                                                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                
+                                                <!-- Profile Info -->
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding ProfileName}" 
+                                                               Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                                               FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding CommandLineArgs, FallbackValue='No arguments'}" 
+                                                               Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                               TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                                </StackPanel>
+                                                
+                                                <!-- Actions -->
+                                                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                                    <Button Command="{Binding DataContext.EditProfileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Style="{StaticResource MaterialDesignIconButton}"
+                                                            ToolTip="Edit profile" Margin="4,0">
+                                                        <materialDesign:PackIcon Kind="Edit" Width="20" Height="20"/>
+                                                    </Button>
+                                                    <Button Command="{Binding DataContext.DeleteProfileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Style="{StaticResource MaterialDesignIconButton}"
+                                                            ToolTip="Delete profile" Margin="4,0,0,0">
+                                                        <materialDesign:PackIcon Kind="Delete" Width="20" Height="20"/>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                        </materialDesign:Card>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+                        </ScrollViewer>
+                    </Grid>
+                </TabItem>
+                
+                <!-- Companions Tab -->
+                <TabItem Header="Companions">
+                    <TabItem.HeaderTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Apps" Width="20" Height="20" Margin="0,0,8,0"/>
+                                <TextBlock Text="Companions"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </TabItem.HeaderTemplate>
+                    
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <!-- Companions Toolbar -->
+                        <materialDesign:Card Grid.Row="0" Margin="24,24,24,12" Padding="20">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="Apps" Width="20" Height="20" Margin="0,0,8,0" 
+                                                             Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                    <TextBlock Text="Companion Applications" Style="{StaticResource MaterialDesignSubtitle1TextBlock}"/>
+                                    <TextBlock Text="{Binding Companions.Count, StringFormat=' ({0})'}" 
+                                               Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                                </StackPanel>
+                                
+                                <Button Grid.Column="1" 
+                                        Command="{Binding AddCompanionCommand}"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        ToolTip="Add companion application">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Plus" Width="16" Height="16" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Add Companion"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </materialDesign:Card>
+                        
+                        <!-- Companions List -->
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="24,0,24,24">
+                            <Grid>
+                                <!-- Empty State -->
+                                <StackPanel Visibility="{Binding HasCompanions, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"
+                                            HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,50,0,0">
+                                <materialDesign:PackIcon Kind="AppsBox" Width="48" Height="48" 
+                                                         Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                         HorizontalAlignment="Center"/>
+                                <TextBlock Text="No companion apps configured" 
+                                           Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                           Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                           HorizontalAlignment="Center" Margin="0,16,0,8"/>
+                                <TextBlock Text="Add companion applications to enhance your gaming experience." 
+                                           Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                           Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                           HorizontalAlignment="Center" TextAlignment="Center"
+                                           TextWrapping="Wrap" MaxWidth="300"/>
+                            </StackPanel>
+                            
+                            <!-- Companions -->
+                            <ItemsControl ItemsSource="{Binding Companions}"
+                                          Visibility="{Binding HasCompanions, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <materialDesign:Card Margin="0,0,0,12" Padding="16">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                
+                                                <!-- Companion Icon -->
+                                                <Border Grid.Column="0" Width="40" Height="40" 
+                                                        Background="{DynamicResource AccentColorBrush}"
+                                                        CornerRadius="20" Margin="0,0,16,0">
+                                                    <materialDesign:PackIcon Kind="Application" Width="20" Height="20" 
+                                                                             Foreground="White" 
+                                                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                
+                                                <!-- Companion Info -->
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding Name}" 
+                                                                   Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                                                   FontWeight="SemiBold"/>
+                                                        <materialDesign:Chip Content="{Binding Type}" 
+                                                                             Style="{StaticResource MaterialDesignOutlineChip}"
+                                                                             Margin="12,0,0,0" 
+                                                                             FontSize="10"/>
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding PathOrURL}" 
+                                                               Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                               TextTrimming="CharacterEllipsis" Margin="0,4,0,0"/>
+                                                </StackPanel>
+                                                
+                                                <!-- Actions -->
+                                                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                                    <Button Command="{Binding DataContext.EditCompanionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Style="{StaticResource MaterialDesignIconButton}"
+                                                            ToolTip="Edit companion" Margin="4,0">
+                                                        <materialDesign:PackIcon Kind="Edit" Width="20" Height="20"/>
+                                                    </Button>
+                                                    <Button Command="{Binding DataContext.DeleteCompanionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Style="{StaticResource MaterialDesignIconButton}"
+                                                            ToolTip="Delete companion" Margin="4,0,0,0">
+                                                        <materialDesign:PackIcon Kind="Delete" Width="20" Height="20"/>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                        </materialDesign:Card>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            </Grid>
+                        </ScrollViewer>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </materialDesign:Card>
+
+        <!-- Loading Indicator -->
+        <Grid Grid.RowSpan="2" 
+              Background="#80000000"
+              Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             IsIndeterminate="True"
+                             Width="48" Height="48" />
+                <TextBlock Text="Loading game details..." 
+                           Style="{StaticResource MaterialDesignBody1TextBlock}"
+                           Foreground="White"
+                           HorizontalAlignment="Center" Margin="0,16,0,0"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

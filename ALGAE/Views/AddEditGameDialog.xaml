@@ -1,0 +1,223 @@
+﻿<Window x:Class="ALGAE.Views.AddEditGameDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d"
+        Title="{Binding Title}" 
+        Height="650" Width="550"
+        MinHeight="500" MinWidth="450"
+        ResizeMode="CanResize"
+        WindowStartupLocation="CenterOwner"
+        Style="{StaticResource MaterialDesignWindow}">
+    
+    <Window.InputBindings>
+        <KeyBinding Key="Enter" 
+                    Modifiers="Ctrl" 
+                    Command="{Binding SaveCommand}"/>
+        <KeyBinding Key="Escape" 
+                    Command="{Binding CancelCommand}"/>
+    </Window.InputBindings>
+    
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,24">
+            <TextBlock Text="{Binding Title}" 
+                       Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                       Margin="0,0,0,16"/>
+            
+            <!-- Validation Errors Panel -->
+            <materialDesign:Card Background="{DynamicResource MaterialDesignPaper}"
+                                 Padding="16,12"
+                                 Margin="0,0,0,8"
+                                 BorderBrush="{DynamicResource MaterialDesignErrorBrush}"
+                                 BorderThickness="2"
+                                 Visibility="{Binding HasValidationErrors, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <materialDesign:PackIcon Kind="AlertCircle" 
+                                                 Width="20" Height="20" 
+                                                 VerticalAlignment="Center"
+                                                 Foreground="{DynamicResource MaterialDesignErrorBrush}"
+                                                 Margin="0,0,8,0"/>
+                        <TextBlock Text="Please fix the following issues:" 
+                                   Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource MaterialDesignErrorBrush}"/>
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding ValidationErrors}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" 
+                                           Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                           Foreground="{DynamicResource MaterialDesignErrorBrush}"
+                                           Margin="28,2,0,2"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </materialDesign:Card>
+        </StackPanel>
+
+        <!-- Form -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Game Executable (moved to top) -->
+                <Grid Margin="0,0,0,24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <TextBox Grid.Column="0"
+                             materialDesign:HintAssist.Hint="Game Executable *"
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                             materialDesign:ValidationAssist.UsePopup="True"
+                             Margin="0,0,8,0">
+                        <TextBox.Text>
+                            <Binding Path="ExecutableFullPath" UpdateSourceTrigger="PropertyChanged">
+                                <Binding.ValidationRules>
+                                    <DataErrorValidationRule/>
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </TextBox.Text>
+                    </TextBox>
+                    
+                    <Button Grid.Column="1"
+                            Content="Browse"
+                            Command="{Binding BrowseExecutableCommand}"
+                            Style="{StaticResource MaterialDesignRaisedSecondaryButton}"
+                            ToolTip="Browse for game executable file - this will auto-populate other fields"/>
+                </Grid>
+
+                <!-- Game Name -->
+                <TextBox materialDesign:HintAssist.Hint="Game Name *"
+                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                         materialDesign:ValidationAssist.UsePopup="True"
+                         Margin="0,0,0,16">
+                    <TextBox.Text>
+                        <Binding Path="GameName" UpdateSourceTrigger="PropertyChanged">
+                            <Binding.ValidationRules>
+                                <DataErrorValidationRule/>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </TextBox.Text>
+                </TextBox>
+
+                <!-- Short Name -->
+                <TextBox materialDesign:HintAssist.Hint="Short Name"
+                         Text="{Binding ShortName, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                         Margin="0,0,0,16"/>
+
+                <!-- Publisher -->
+                <TextBox materialDesign:HintAssist.Hint="Publisher"
+                         Text="{Binding Publisher, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                         Margin="0,0,0,16"/>
+
+                <!-- Version -->
+                <TextBox materialDesign:HintAssist.Hint="Version"
+                         Text="{Binding Version, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                         Margin="0,0,0,16"/>
+
+                <!-- Description -->
+                <TextBox materialDesign:HintAssist.Hint="Description"
+                         Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         MinLines="3"
+                         MaxLines="5"
+                         Margin="0,0,0,16"/>
+
+                <!-- Install Path -->
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <TextBox Grid.Column="0"
+                             materialDesign:HintAssist.Hint="Install Path *"
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                             materialDesign:ValidationAssist.UsePopup="True"
+                             Margin="0,0,8,0">
+                        <TextBox.Text>
+                            <Binding Path="InstallPath" UpdateSourceTrigger="PropertyChanged">
+                                <Binding.ValidationRules>
+                                    <DataErrorValidationRule/>
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </TextBox.Text>
+                    </TextBox>
+                    
+                    <Button Grid.Column="1"
+                            Content="Browse"
+                            Command="{Binding BrowseInstallPathCommand}"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            ToolTip="Browse for game installation folder"/>
+                </Grid>
+
+                <!-- Game Working Path -->
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <TextBox Grid.Column="0"
+                             materialDesign:HintAssist.Hint="Working Directory (optional)"
+                             Text="{Binding GameWorkingPath, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                             Margin="0,0,8,0"/>
+                    
+                    <Button Grid.Column="1"
+                            Content="Browse"
+                            Command="{Binding BrowseWorkingPathCommand}"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            ToolTip="Browse for working directory (optional)"/>
+                </Grid>
+
+                <!-- Game Arguments -->
+                <TextBox materialDesign:HintAssist.Hint="Launch Arguments (optional)"
+                         Text="{Binding GameArgs, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                         Margin="0,0,0,16"/>
+
+                <!-- Theme Name -->
+                <TextBox materialDesign:HintAssist.Hint="Theme Name (optional)"
+                         Text="{Binding ThemeName, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                         Margin="0,0,0,16"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="2" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right"
+                    Margin="0,24,0,0">
+            <Button Content="Cancel" 
+                    Command="{Binding CancelCommand}"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Margin="0,0,8,0"
+                    MinWidth="80"
+                    ToolTip="Cancel (Esc)"/>
+            <Button Content="{Binding SaveButtonText}" 
+                    Command="{Binding SaveCommand}"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    MinWidth="80"
+                    IsDefault="True"
+                    ToolTip="Save game (Ctrl+Enter)"/>
+        </StackPanel>
+    </Grid>
+</Window>

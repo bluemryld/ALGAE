@@ -1,0 +1,137 @@
+<Window x:Class="ALGAE.Views.AddEditCompanionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Companion Application" Height="500" Width="600"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Style="{StaticResource MaterialDesignWindow}">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,24">
+            <materialDesign:PackIcon Kind="Application" Width="32" Height="32" 
+                                     Foreground="{DynamicResource PrimaryHueMidBrush}"
+                                     VerticalAlignment="Center" Margin="0,0,12,0"/>
+            <TextBlock Text="Companion Configuration" 
+                       Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                       VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Form -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Basic Info -->
+                <TextBox materialDesign:HintAssist.Hint="Companion Name"
+                         materialDesign:HintAssist.IsFloating="True"
+                         Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                         MaxLength="100"
+                         Margin="0,0,0,16"/>
+
+                <!-- Type Selection -->
+                <ComboBox materialDesign:HintAssist.Hint="Type"
+                          materialDesign:HintAssist.IsFloating="True"
+                          SelectedValue="{Binding Type}"
+                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                          Margin="0,0,0,16">
+                    <ComboBoxItem Content="Executable" />
+                    <ComboBoxItem Content="URL" />
+                    <ComboBoxItem Content="Document" />
+                    <ComboBoxItem Content="Script" />
+                </ComboBox>
+
+                <!-- Path/URL -->
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <TextBox Grid.Column="0"
+                             materialDesign:HintAssist.Hint="Path or URL"
+                             materialDesign:HintAssist.IsFloating="True"
+                             Text="{Binding PathOrURL, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                             Margin="0,0,8,0"/>
+                    
+                    <Button Grid.Column="1" 
+                            Content="Browse"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Click="BrowseButton_Click"
+                            VerticalAlignment="Bottom"/>
+                </Grid>
+
+                <!-- Launch Helper -->
+                <TextBox materialDesign:HintAssist.Hint="Launch Helper (Optional)"
+                         materialDesign:HintAssist.IsFloating="True"
+                         Text="{Binding LaunchHelper, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                         Margin="0,0,0,16"/>
+
+                <!-- Browser (for URLs) -->
+                <TextBox materialDesign:HintAssist.Hint="Browser (Optional)"
+                         materialDesign:HintAssist.IsFloating="True"
+                         Text="{Binding Browser, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                         Margin="0,0,0,16"/>
+
+                <!-- Open in New Window -->
+                <CheckBox Content="Open in new window"
+                          IsChecked="{Binding OpenInNewWindow}"
+                          Style="{StaticResource MaterialDesignCheckBox}"
+                          Margin="0,0,0,16"/>
+
+                <!-- Information Card -->
+                <materialDesign:Card Padding="16" Background="{DynamicResource MaterialDesignCardBackground}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <materialDesign:PackIcon Kind="InformationOutline" Width="16" Height="16" 
+                                                     Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                     VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Companion Application Information" 
+                                       Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                       FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <TextBlock Text="Companion applications enhance your gaming experience by providing additional tools, overlays, or utilities that work alongside your games."
+                                   Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                   Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,8"/>
+                        <TextBlock Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                   Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                   TextWrapping="Wrap">
+                            <Run Text="Examples:" FontWeight="SemiBold"/>
+                            <LineBreak/>
+                            <Run Text="• Discord overlay (executable)"/>
+                            <LineBreak/>
+                            <Run Text="• Game wiki or guide (URL)"/>
+                            <LineBreak/>
+                            <Run Text="• Configuration files (document)"/>
+                            <LineBreak/>
+                            <Run Text="• Custom scripts (script)"/>
+                        </TextBlock>
+                    </StackPanel>
+                </materialDesign:Card>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
+            <Button Content="Cancel" 
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    IsCancel="True"
+                    Margin="0,0,12,0"
+                    Click="CancelButton_Click"/>
+            <Button Content="Save Companion"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    IsDefault="True"
+                    Click="SaveButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

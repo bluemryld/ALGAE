@@ -1,0 +1,286 @@
+﻿<UserControl x:Class="ALGAE.Views.GamesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:local="clr-namespace:ALGAE.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="900">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <materialDesign:Card Grid.Row="0" Margin="0,0,0,16" Padding="16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Left side - Action buttons -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Button Command="{Binding AddGameCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            ToolTip="Add a new game to your library"
+                            Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Plus" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Add Game" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding ScanGamesCommand}"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            ToolTip="Automatically scan for installed games"
+                            Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Magnify" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Scan" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding RefreshCommand}"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            ToolTip="Refresh the games list"
+                            Margin="0,0,16,0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Refresh" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                
+                <!-- Center - Game count -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <materialDesign:PackIcon Kind="Controller" Width="16" Height="16" Margin="0,0,4,0" 
+                                             Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                    <TextBlock Text="{Binding FilteredGames.Count, StringFormat={}{0} games}"
+                               Style="{StaticResource MaterialDesignBody2TextBlock}"
+                               Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                    <TextBlock Text="{Binding Games.Count, StringFormat={} of {0} total}"
+                               Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                               Visibility="{Binding IsFiltered, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                </StackPanel>
+
+                <!-- Right side - Search -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <TextBox materialDesign:HintAssist.Hint="Search games, publishers, descriptions..." 
+                             materialDesign:HintAssist.IsFloating="True"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             MinWidth="250"
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding SearchCommand}"/>
+                            <KeyBinding Key="Escape" Command="{Binding ClearSearchCommand}"/>
+                        </TextBox.InputBindings>
+                    </TextBox>
+                    <Button Command="{Binding ClearSearchCommand}"
+                            Style="{StaticResource MaterialDesignIconButton}"
+                            ToolTip="Clear search"
+                            Margin="4,0,0,0"
+                            Visibility="{Binding HasSearchText, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <materialDesign:PackIcon Kind="Close" Width="18" Height="18"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </materialDesign:Card>
+
+        <!-- Games List -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Grid>
+                <!-- Loading Indicator -->
+                <StackPanel Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            HorizontalAlignment="Center" 
+                            VerticalAlignment="Center"
+                            Margin="0,50,0,0">
+                    <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                 IsIndeterminate="True"
+                                 Width="48" Height="48" />
+                    <TextBlock Text="Loading games..."
+                               Style="{StaticResource MaterialDesignBody2TextBlock}"
+                               HorizontalAlignment="Center"
+                               Margin="0,16,0,0"
+                               Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                </StackPanel>
+                
+                <!-- Games List -->
+                <ItemsControl ItemsSource="{Binding FilteredGames}"
+                              Visibility="{Binding IsLoading, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <materialDesign:Card Margin="0,0,0,12" 
+                                             Style="{StaticResource MaterialDesignOutlinedCard}"
+                                             materialDesign:ElevationAssist.Elevation="Dp2">
+                            <Grid Margin="20">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Game Icon -->
+                                <Border Grid.Column="0" Grid.RowSpan="2"
+                                        Width="56" Height="56" 
+                                        Background="{DynamicResource PrimaryHueLightBrush}"
+                                        CornerRadius="8"
+                                        VerticalAlignment="Top"
+                                        Margin="0,0,16,0">
+                                    <materialDesign:PackIcon Kind="Controller" 
+                                                             Width="28" Height="28" 
+                                                             HorizontalAlignment="Center"
+                                                             VerticalAlignment="Center"
+                                                             Foreground="White"/>
+                                </Border>
+
+                                <!-- Game Header Info -->
+                                <StackPanel Grid.Column="1" Grid.Row="0" VerticalAlignment="Top">
+                                    <TextBlock Text="{Binding Name}" 
+                                               Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                               FontWeight="SemiBold"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                        <TextBlock Text="{Binding Publisher}" 
+                                                   Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                   Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                   Visibility="{Binding Publisher, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Collapsed}"/>
+                                        <TextBlock Text=" • " 
+                                                   Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                   Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                   Visibility="{Binding Publisher, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Collapsed}"/>
+                                        <TextBlock Text="{Binding Version}" 
+                                                   Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                   Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                   Visibility="{Binding Version, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Collapsed}"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- Action Buttons -->
+                                <StackPanel Grid.Column="2" Grid.Row="0" 
+                                           Orientation="Horizontal" 
+                                           VerticalAlignment="Top">
+                                    <Button Command="{Binding DataContext.LaunchGameCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource MaterialDesignRaisedButton}"
+                                            ToolTip="Launch this game"
+                                            Margin="0,0,8,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="Play" 
+                                                                     Width="16" Height="16" 
+                                                                     VerticalAlignment="Center" 
+                                                                     Margin="0,0,6,0"/>
+                                            <TextBlock Text="Launch" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Command="{Binding DataContext.ViewGameDetailsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                                            ToolTip="View game details, profiles, and companions"
+                                            Margin="0,0,8,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="InformationOutline" 
+                                                                     Width="16" Height="16" 
+                                                                     VerticalAlignment="Center" 
+                                                                     Margin="0,0,6,0"/>
+                                            <TextBlock Text="Details" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Command="{Binding DataContext.EditGameCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource MaterialDesignIconButton}"
+                                            ToolTip="Edit game settings"
+                                            Margin="4,0">
+                                        <materialDesign:PackIcon Kind="Edit" Width="20" Height="20"/>
+                                    </Button>
+
+                                    <Button Command="{Binding DataContext.DeleteGameCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource MaterialDesignIconButton}"
+                                            ToolTip="Delete this game from library"
+                                            Margin="4,0,0,0">
+                                        <materialDesign:PackIcon Kind="Delete" Width="20" Height="20"/>
+                                    </Button>
+                                </StackPanel>
+
+                                <!-- Game Details -->
+                                <StackPanel Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" 
+                                           Margin="0,12,0,0">
+                                    
+                                    <!-- Description -->
+                                    <TextBlock Text="{Binding Description}" 
+                                               Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               TextWrapping="Wrap"
+                                               MaxHeight="40"
+                                               TextTrimming="CharacterEllipsis"
+                                               Margin="0,0,0,8"
+                                               Visibility="{Binding Description, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Collapsed}"/>
+                                    
+                                    <!-- Install Path -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <materialDesign:PackIcon Kind="FolderOpen" 
+                                                                 Width="14" Height="14" 
+                                                                 VerticalAlignment="Center"
+                                                                 Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                                 Margin="0,0,6,0"/>
+                                        <TextBlock Text="{Binding InstallPath}" 
+                                                   Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                                   Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                    
+                                    <!-- Executable -->
+                                    <StackPanel Orientation="Horizontal"
+                                                Visibility="{Binding ExecutableName, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Collapsed}">
+                                        <materialDesign:PackIcon Kind="ApplicationCog" 
+                                                                 Width="14" Height="14" 
+                                                                 VerticalAlignment="Center"
+                                                                 Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                                 Margin="0,0,6,0"/>
+                                        <TextBlock Text="{Binding ExecutableName}" 
+                                                   Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                                   Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </materialDesign:Card>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Grid>
+        </ScrollViewer>
+
+        <!-- Empty State -->
+        <StackPanel Grid.Row="1" 
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center"
+                    Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <materialDesign:PackIcon Kind="GamepadVariant" 
+                                     Width="64" Height="64" 
+                                     Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                     HorizontalAlignment="Center"/>
+            <TextBlock Text="No games found" 
+                       Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                       Foreground="{DynamicResource MaterialDesignBodyLight}"
+                       HorizontalAlignment="Center" 
+                       Margin="0,16,0,8"/>
+            <TextBlock Text="Click 'Add Game' to get started or 'Scan for Games' to automatically discover installed games." 
+                       Style="{StaticResource MaterialDesignBody2TextBlock}"
+                       Foreground="{DynamicResource MaterialDesignBodyLight}"
+                       HorizontalAlignment="Center"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       MaxWidth="300"/>
+        </StackPanel>
+    </Grid>
+</UserControl>
