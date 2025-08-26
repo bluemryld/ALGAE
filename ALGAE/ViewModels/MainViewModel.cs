@@ -81,10 +81,14 @@ namespace ALGAE.ViewModels
         [RelayCommand]
         private void NavigateToLauncher()
         {
-            var launcherMenuItem = MenuItems.FirstOrDefault(m => m.ViewName == "Launcher");
-            if (launcherMenuItem != null)
+            try
             {
-                SelectedMenuItem = launcherMenuItem;
+                var launcherWindow = _serviceProvider.GetRequiredService<LauncherWindow>();
+                launcherWindow.ShowAndActivate();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error opening launcher window: {ex.Message}");
             }
         }
         
@@ -155,11 +159,17 @@ namespace ALGAE.ViewModels
             {
                 System.Diagnostics.Debug.WriteLine($"Switching to view: {menuItem.ViewName}");
                 
+                // Skip launcher as it opens in separate window
+                if (menuItem.ViewName == "Launcher")
+                {
+                    NavigateToLauncher();
+                    return;
+                }
+                
                 object? newView = menuItem.ViewName switch
                 {
                     "Home" => CreateHomeView(),
                     "Games" => CreateGamesView(),
-                    "Launcher" => CreateLauncherView(),
                     _ => null
                 };
                 

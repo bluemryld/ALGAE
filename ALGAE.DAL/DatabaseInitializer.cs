@@ -95,6 +95,22 @@ public class DatabaseInitializer
                 SearchPathId INTEGER PRIMARY KEY AUTOINCREMENT,
                 Path TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS LaunchHistory (
+                LaunchId INTEGER PRIMARY KEY AUTOINCREMENT,
+                GameId INTEGER NOT NULL,
+                GameName TEXT NOT NULL,
+                LaunchTime TEXT NOT NULL,
+                EndTime TEXT,
+                Success INTEGER NOT NULL DEFAULT 0,
+                ErrorMessage TEXT,
+                ProcessId INTEGER,
+                ExecutablePath TEXT,
+                WorkingDirectory TEXT,
+                LaunchArguments TEXT,
+                PeakMemoryUsage TEXT,
+                AverageCpuUsage REAL,
+                FOREIGN KEY (GameId) REFERENCES Games (GameId)
+            );
             CREATE TABLE IF NOT EXISTS AppSettings (
                 SettingsId INTEGER PRIMARY KEY DEFAULT 1,
                 LoggingEnabled INTEGER DEFAULT 0,

@@ -1,6 +1,7 @@
 using Algae.Core.Services;
 using Algae.DAL;
 using ALGAE.DAL.Repositories;
+using ALGAE.Views;
 
 using CommunityToolkit.Mvvm.Messaging;
 using MaterialDesignThemes.Wpf;
@@ -38,13 +39,33 @@ public partial class App : Application
             var initializer = host.Services.GetRequiredService<DatabaseInitializer>();
             initializer.Initialize();
 
-            App app = new();
-            app.InitializeComponent();
-            app.MainWindow = host.Services.GetRequiredService<MainWindow>();
-            app.MainWindow.Visibility = Visibility.Visible;
-            app.Run();
+        App app = new();
+        app.InitializeComponent();
+        app.MainWindow = host.Services.GetRequiredService<MainWindow>();
+        app.MainWindow.Visibility = Visibility.Visible;
+        
+        // Set up proper shutdown handling
+        app.Exit += (sender, e) => {
+            try
+            {
+                // Dispose of singleton services that might have background timers
+                var gameMonitorService = host.Services.GetService<ALGAE.Services.IGameProcessMonitorService>();
+                if (gameMonitorService is IDisposable disposableMonitor)
+                {
+                    disposableMonitor.Dispose();
+                }
+                
+                System.Diagnostics.Debug.WriteLine("Application shutdown: Services disposed");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error during application shutdown: {ex.Message}");
+            }
+        };
+        
+        app.Run();
 
-            await host.StopAsync().ConfigureAwait(true);
+        await host.StopAsync().ConfigureAwait(true);
         }
         catch (Exception ex)
         {
@@ -78,6 +99,8 @@ public partial class App : Application
             });
 
             services.AddSingleton<MainWindow>();
+            services.AddSingleton<LauncherWindow>(provider => 
+                new LauncherWindow(provider.GetRequiredService<ALGAE.ViewModels.LauncherViewModel>()));
             services.AddSingleton<ALGAE.ViewModels.MainViewModel>();
             services.AddTransient<ALGAE.ViewModels.GamesViewModel>(provider => 
                 new ALGAE.ViewModels.GamesViewModel(
@@ -86,7 +109,8 @@ public partial class App : Application
                     provider.GetRequiredService<ALGAE.Services.IGameProcessMonitorService>(),
                     provider,
                     provider.GetRequiredService<IProfilesRepository>(),
-                    provider.GetRequiredService<ALGAE.Services.ICompanionLaunchService>()
+                    provider.GetRequiredService<ALGAE.Services.ICompanionLaunchService>(),
+                    provider.GetRequiredService<ALGAE.Services.IGameLaunchService>()
                 ));
             services.AddTransient<ALGAE.ViewModels.HomeViewModel>();
             services.AddTransient<ALGAE.ViewModels.GameDetailViewModel>(provider =>
@@ -116,8 +140,12 @@ public partial class App : Application
             // Register companion launch service
             services.AddSingleton<ALGAE.Services.ICompanionLaunchService, ALGAE.Services.CompanionLaunchService>();
 
+            // Register game launch service
+            services.AddSingleton<ALGAE.Services.IGameLaunchService, ALGAE.Services.GameLaunchService>();
+
             // Register repositories
             services.AddTransient<IGameRepository, GameRepository>();
+            services.AddTransient<ILaunchHistoryRepository, LaunchHistoryRepository>();
             services.AddTransient<IProfilesRepository, ProfilesRepository>();
             services.AddTransient<ICompanionRepository, CompanionRepository>();
             services.AddTransient<ICompanionProfileRepository, CompanionProfileRepository>();

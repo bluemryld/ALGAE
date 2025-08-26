@@ -1,4 +1,5 @@
-﻿using System.Windows.Input;
+using System.Windows;
+using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using ALGAE.ViewModels;
 
@@ -17,6 +18,16 @@ public partial class MainWindow
         InitializeComponent();
 
         CommandBindings.Add(new CommandBinding(ApplicationCommands.Close, OnClose));
+        
+        // Add proper cleanup on window closing
+        Closing += MainWindow_Closing;
+    }
+    
+    private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        // Ensure application shuts down completely when main window closes
+        System.Diagnostics.Debug.WriteLine("MainWindow closing - requesting application shutdown");
+        Application.Current.Shutdown();
     }
 
     private void OnClose(object sender, ExecutedRoutedEventArgs e)

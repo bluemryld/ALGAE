@@ -47,6 +47,8 @@ namespace ALGAE.Services
             // Initialize performance monitoring timer
             _monitoringTimer = new System.Timers.Timer(2000); // Update every 2 seconds
             _monitoringTimer.Elapsed += OnMonitoringTimerElapsed;
+            _monitoringTimer.AutoReset = true;
+            _monitoringTimer.Enabled = false; // Start disabled
 
             try
             {
