@@ -6,7 +6,13 @@ A modern, Material Design-based WPF application for managing and launching your 
 
 ### Current Features
 - **Modern UI**: Clean Material Design interface with intuitive navigation
-- **Game Library Management**: Add, edit, and organize your game collection
+- **Game Library Management**: Add, edit, and organize your game collection with full CRUD operations
+- **Advanced Game Launch System**: 
+  - Comprehensive game validation before launch
+  - Support for custom launch arguments and working directories
+  - Profile-based launching with companion applications
+  - Launch history tracking with performance metrics
+  - Real-time launcher window with progress monitoring
 - **Multiple Navigation Options**: 
   - Sidebar navigation with visual menu items
   - Top menu bar with keyboard shortcuts
@@ -22,12 +28,22 @@ A modern, Material Design-based WPF application for managing and launching your 
   - Launch, edit, and delete game actions
   - Empty state guidance for new users
   - Loading states with progress indicators
-- **Launcher View**: 
+- **Launcher Window** (Opens automatically on game launch):
   - Real-time monitoring of running games
   - Process performance statistics (CPU, memory usage)
   - Game session tracking with play time
   - Window management controls (minimize, bring to front, stop)
   - Recent sessions history
+  - Separate window for better monitoring experience
+- **Profile System**:
+  - Create custom launch profiles with specific arguments
+  - Companion application support (launch related tools with games)
+  - Profile-specific game configurations
+- **Launch History & Analytics**:
+  - Comprehensive tracking of all game launches
+  - Success/failure logging with detailed error messages
+  - Performance metrics (memory usage, session duration)
+  - Launch statistics and trends
 
 ### Planned Features
 - **Automatic Game Scanning**: Discover installed games automatically
@@ -95,20 +111,34 @@ ALGAE/
 │   │   ├── HomeView.xaml           # Home/dashboard view
 │   │   ├── GamesView.xaml          # Games library view
 │   │   ├── LauncherView.xaml       # Game launcher/monitor view
+│   │   ├── LauncherWindow.xaml     # Separate launcher window
 │   │   └── AddEditGameDialog.xaml  # Add/edit game dialog
 │   ├── ViewModels/                 # MVVM view models
 │   │   ├── MainViewModel.cs        # Main navigation logic
 │   │   ├── HomeViewModel.cs        # Home view logic
 │   │   ├── GamesViewModel.cs       # Games management logic
 │   │   ├── LauncherViewModel.cs    # Game launcher/monitor logic
-│   │   └── AddEditGameViewModel.cs # Game editing logic
+│   │   └── GameDetailViewModel.cs  # Game details and profiles
+│   ├── Services/                   # Application services
+│   │   ├── IGameLaunchService.cs   # Game launching interface
+│   │   ├── GameLaunchService.cs    # Game launching implementation
+│   │   ├── GameProcessMonitorService.cs # Process monitoring
+│   │   └── NotificationService.cs  # UI notifications
 │   ├── Converters/                 # XAML value converters
 │   └── App.xaml                    # Application resources and startup
 ├── ALGAE.Core/                     # Core business logic
 ├── ALGAE.DAL/                      # Data access layer
 │   ├── Models/                     # Entity models
+│   │   ├── Game.cs                 # Game entity
+│   │   ├── Profile.cs              # Launch profile entity
+│   │   ├── Companion.cs            # Companion app entity
+│   │   └── LaunchHistory.cs        # Launch tracking entity
 │   ├── Repositories/               # Data repositories
+│   │   ├── IGameRepository.cs      # Game data interface
+│   │   ├── ILaunchHistoryRepository.cs # Launch history interface
+│   │   └── [Other repositories]    # Additional data access
 │   └── DatabaseContext.cs         # EF Core context
+├── ALGAE.Tests/                    # Unit and integration tests
 └── README.md                       # This file
 ```
 
