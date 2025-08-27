@@ -1,6 +1,6 @@
 # ALGAE Development TODO
 
-> Last updated: 2025-01-26
+> Last updated: 2025-08-27
 
 ## 🚀 High Priority
 
@@ -104,16 +104,19 @@
 
 ## 🔧 Technical Debt
 
-- [ ] **Code Quality**
-  - [ ] Add unit tests for ViewModels
+- [x] **Code Quality** ✅ (Partially complete)
+  - [x] Add unit tests for ViewModels (24 tests implemented)
+  - [x] Service testing with mocks and test data builders
   - [ ] Integration tests for database operations
   - [ ] Code coverage reporting
   - [ ] Static code analysis setup
+  - [ ] Additional ViewModel tests (GameDetailViewModel, LauncherViewModel)
+  - [ ] Repository unit tests
 
-- [ ] **Architecture**
-  - [ ] Implement proper service layer
-  - [ ] Add dependency injection for services
-  - [ ] Improve error handling and logging
+- [x] **Architecture** ✅ (Mostly complete)
+  - [x] Implement proper service layer
+  - [x] Add dependency injection for services
+  - [x] Improve error handling and logging
   - [ ] Add configuration management
 
 - [ ] **Documentation**
@@ -162,7 +165,30 @@
 
 ## 📊 Progress Tracking
 
-### Recent Achievements (2025-01-26)
+### Recent Achievements (2025-08-27)
+- [x] **Consistent Launch Validation Implementation**
+  - [x] Fixed GameDetailViewModel to use same validation as GamesViewModel
+  - [x] Unified launch validation across all views
+  - [x] Proper error handling and edit game dialog integration
+  - [x] GameLaunchService dependency injection in all ViewModels
+- [x] **Profile Dropdown Functionality**
+  - [x] Added profile dropdown buttons to Games view
+  - [x] Dynamic profile loading from repositories
+  - [x] Default launch option + profile-specific options
+  - [x] Proper service access via App.Services property
+- [x] **Comprehensive Unit Testing**
+  - [x] Created 24 unit tests covering critical business logic
+  - [x] GameLaunchService validation and launch testing
+  - [x] GamesViewModel command and data loading testing
+  - [x] Test data builders for consistent test setup
+  - [x] Mock-based testing with AutoMocker
+- [x] **Dependency Injection Improvements**
+  - [x] Added App.Services property for service access
+  - [x] Fixed GameDetailViewModel constructor with IGameLaunchService
+  - [x] Proper service registration in DI container
+  - [x] Service access patterns in Views
+
+### Previous Achievements (2025-01-26)
 - [x] **Major Game Launch System Implementation**
   - [x] Complete game validation service with error handling
   - [x] Launch history tracking with database integration

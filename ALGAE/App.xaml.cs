@@ -22,6 +22,7 @@ namespace ALGAE;
 /// </summary>
 public partial class App : Application
 {
+    public IServiceProvider Services { get; private set; } = null!;
     [STAThread]
     private static void Main(string[] args)
     {
@@ -40,6 +41,7 @@ public partial class App : Application
             initializer.Initialize();
 
         App app = new();
+        app.Services = host.Services; // Initialize the Services property
         app.InitializeComponent();
         app.MainWindow = host.Services.GetRequiredService<MainWindow>();
         app.MainWindow.Visibility = Visibility.Visible;
@@ -122,12 +124,15 @@ public partial class App : Application
                     provider.GetRequiredService<ALGAE.Services.INotificationService>(),
                     provider,
                     provider.GetRequiredService<ALGAE.Services.ICompanionLaunchService>(),
-                    provider.GetRequiredService<ALGAE.Services.IGameProcessMonitorService>()
+                    provider.GetRequiredService<ALGAE.Services.IGameProcessMonitorService>(),
+                    provider.GetRequiredService<ALGAE.Services.IGameLaunchService>()
                 ));
             services.AddTransient<ALGAE.ViewModels.LauncherViewModel>(provider =>
                 new ALGAE.ViewModels.LauncherViewModel(
                     provider.GetRequiredService<ALGAE.Services.IGameProcessMonitorService>(),
                     provider.GetRequiredService<ALGAE.Services.INotificationService>(),
+                    provider.GetRequiredService<ALGAE.Services.IGameLaunchService>(),
+                    provider.GetRequiredService<IProfilesRepository>(),
                     provider.GetRequiredService<Dispatcher>()
                 ));
             

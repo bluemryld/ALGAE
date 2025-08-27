@@ -30,7 +30,7 @@
                     <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center">
                         <materialDesign:PackIcon Kind="Play" Width="24" Height="24" 
                                                  VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBlock Text="Game Launcher" 
+                        <TextBlock Text="{Binding GameTitle, FallbackValue='Game Launcher'}" 
                                    Style="{StaticResource MaterialDesignHeadline6TextBlock}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
@@ -215,26 +215,81 @@
                                        Style="{StaticResource MaterialDesignHeadline6TextBlock}"
                                        Margin="0,0,0,16"/>
                             
-                            <UniformGrid Columns="2" Margin="0,0,0,8">
-                                <Button Content="Refresh Stats" 
-                                        Command="{Binding RefreshStatsCommand}"
-                                        Style="{StaticResource MaterialDesignRaisedButton}"
-                                        Margin="2">
-                                    <Button.ToolTip>
-                                        <ToolTip Content="Refresh performance statistics"/>
-                                    </Button.ToolTip>
-                                </Button>
-                                <Button Content="Stop Game" 
-                                        Command="{Binding StopGameCommand}"
-                                        Style="{StaticResource MaterialDesignOutlinedButton}"
-                                        Background="{DynamicResource MaterialDesignValidationErrorBrush}"
-                                        Margin="2">
-                                    <Button.ToolTip>
-                                        <ToolTip Content="Stop the currently running game"/>
-                                    </Button.ToolTip>
-                                </Button>
-                            </UniformGrid>
-                            <UniformGrid Columns="2">
+                            <!-- Primary Action Buttons -->
+                            <StackPanel Orientation="Vertical">
+                                
+                                <!-- Launch Button with Profile Dropdown -->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <!-- Main Launch Button -->
+                                    <Button Content="Launch Game" 
+                                            Command="{Binding LaunchGameCommand}"
+                                            Style="{StaticResource MaterialDesignRaisedButton}"
+                                            Padding="16,8"
+                                            FontWeight="SemiBold"
+                                            MinWidth="120">
+                                        <Button.ToolTip>
+                                            <ToolTip>
+                                                <StackPanel>
+                                                    <TextBlock Text="Launch this game" FontWeight="Bold"/>
+                                                    <TextBlock Text="{Binding DefaultProfile.ProfileName, StringFormat='Using profile: {0}', FallbackValue='Using default settings'}" 
+                                                               Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                                                </StackPanel>
+                                            </ToolTip>
+                                        </Button.ToolTip>
+                                    </Button>
+                                    
+                                    <!-- Profile Dropdown Button -->
+                                    <Button x:Name="ProfileDropdownButton"
+                                            Style="{StaticResource MaterialDesignRaisedButton}"
+                                            Padding="8"
+                                            Margin="4,0,0,0"
+                                            Click="ProfileDropdownButton_Click"
+                                            Visibility="{Binding HasProfiles, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <materialDesign:PackIcon Kind="ChevronDown" Width="16" Height="16"/>
+                                        <Button.ContextMenu>
+                                            <ContextMenu x:Name="ProfileContextMenu" ItemsSource="{Binding Profiles}">
+                                                <ContextMenu.ItemContainerStyle>
+                                                    <Style TargetType="MenuItem">
+                                                        <Setter Property="Header" Value="{Binding ProfileName}"/>
+                                                        <Setter Property="Command" Value="{Binding Path=PlacementTarget.DataContext.LaunchGameWithProfileCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                                        <Setter Property="CommandParameter" Value="{Binding}"/>
+                                                        <Setter Property="ToolTip" Value="{Binding CommandLineArgs, StringFormat='Arguments: {0}', FallbackValue='No special arguments'}"/>
+                                                    </Style>
+                                                </ContextMenu.ItemContainerStyle>
+                                            </ContextMenu>
+                                        </Button.ContextMenu>
+                                        <Button.ToolTip>
+                                            <ToolTip Content="Choose a profile to launch with"/>
+                                        </Button.ToolTip>
+                                    </Button>
+                                </StackPanel>
+                                
+                                <!-- Other Control Buttons -->
+                                <UniformGrid Columns="2" Margin="0,8,0,0">
+                                    <Button Content="Stop Game" 
+                                            Command="{Binding StopGameCommand}"
+                                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                                            Foreground="{DynamicResource MaterialDesignValidationErrorBrush}"
+                                            BorderBrush="{DynamicResource MaterialDesignValidationErrorBrush}"
+                                            Margin="2">
+                                        <Button.ToolTip>
+                                            <ToolTip Content="Stop the currently running game"/>
+                                        </Button.ToolTip>
+                                    </Button>
+                                    
+                                    <Button Content="Refresh Stats" 
+                                            Command="{Binding RefreshStatsCommand}"
+                                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                                            Margin="2">
+                                        <Button.ToolTip>
+                                            <ToolTip Content="Refresh performance statistics"/>
+                                        </Button.ToolTip>
+                                    </Button>
+                                </UniformGrid>
+                            </StackPanel>
+                            
+                            <!-- Window Control Buttons -->
+                            <UniformGrid Columns="2" Margin="0,8,0,0">
                                 <Button Content="Minimize" 
                                         Command="{Binding MinimizeGameCommand}"
                                         Style="{StaticResource MaterialDesignOutlinedButton}"

@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Windows.Media;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -9,6 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 using ALGAE.Models;
 using ALGAE.Services;
 using Algae.DAL.Models;
+using ALGAE.DAL.Repositories;
 
 namespace ALGAE.ViewModels
 {
@@ -19,7 +21,10 @@ namespace ALGAE.ViewModels
     {
         private readonly IGameProcessMonitorService _processMonitor;
         private readonly INotificationService _notificationService;
+        private readonly IGameLaunchService _gameLaunchService;
+        private readonly IProfilesRepository _profilesRepository;
         private readonly Dispatcher _dispatcher;
+        private Game? _currentGame;
 
         [ObservableProperty]
         private bool _hasRunningGame;
@@ -57,12 +62,42 @@ namespace ALGAE.ViewModels
         [ObservableProperty]
         private bool _hasRecentSessions;
 
+        [ObservableProperty]
+        private string _gameTitle = "Game Launcher";
+
+        [ObservableProperty]
+        private ObservableCollection<Profile> _profiles = new();
+
+        [ObservableProperty]
+        private Profile? _defaultProfile;
+
+        [ObservableProperty]
+        private bool _hasProfiles;
+
         public ObservableCollection<GameSession> RecentSessions => _processMonitor.RecentSessions;
 
         public LauncherViewModel(IGameProcessMonitorService processMonitor, INotificationService notificationService, Dispatcher dispatcher)
         {
             _processMonitor = processMonitor;
             _notificationService = notificationService;
+            _dispatcher = dispatcher;
+
+            // Subscribe to process monitor events
+            _processMonitor.GameStarted += OnGameStarted;
+            _processMonitor.GameStopped += OnGameStopped;
+            _processMonitor.StatsUpdated += OnStatsUpdated;
+
+            // Initialize with current state
+            UpdateGameState();
+            UpdateSessionStats();
+        }
+
+        public LauncherViewModel(IGameProcessMonitorService processMonitor, INotificationService notificationService, IGameLaunchService gameLaunchService, IProfilesRepository profilesRepository, Dispatcher dispatcher)
+        {
+            _processMonitor = processMonitor;
+            _notificationService = notificationService;
+            _gameLaunchService = gameLaunchService;
+            _profilesRepository = profilesRepository;
             _dispatcher = dispatcher;
 
             // Subscribe to process monitor events
@@ -162,6 +197,77 @@ namespace ALGAE.ViewModels
             }
         }
 
+        /// <summary>
+        /// Sets the current game for this launcher instance
+        /// </summary>
+        /// <param name="game">The game to set as current</param>
+        public async void SetCurrentGame(Game game)
+        {
+            _currentGame = game;
+            GameTitle = game.Name;
+            await LoadProfilesAsync();
+        }
+
+        [RelayCommand]
+        private async Task LaunchGameAsync()
+        {
+            System.Diagnostics.Debug.WriteLine("[LauncherViewModel] LaunchGameAsync command triggered");
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[LauncherViewModel] Current game: {_currentGame?.Name ?? "null"}");
+                System.Diagnostics.Debug.WriteLine($"[LauncherViewModel] Game launch service: {(_gameLaunchService != null ? "available" : "null")}");
+                System.Diagnostics.Debug.WriteLine($"[LauncherViewModel] Default profile: {DefaultProfile?.ProfileName ?? "null"}");
+                
+                if (_currentGame != null && _gameLaunchService != null)
+                {
+                    // If we have a default profile, use it; otherwise use the basic launch
+                    if (DefaultProfile != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[LauncherViewModel] Launching with profile: {DefaultProfile.ProfileName}");
+                        await _gameLaunchService.LaunchGameAsync(_currentGame, DefaultProfile);
+                        _notificationService.ShowInformation($"Launching {_currentGame.Name} with profile '{DefaultProfile.ProfileName}'...");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[LauncherViewModel] Launching without profile");
+                        await _gameLaunchService.LaunchGameAsync(_currentGame);
+                        _notificationService.ShowInformation($"Launching {_currentGame.Name}...");
+                    }
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[LauncherViewModel] Cannot launch - missing game or service");
+                    _notificationService.ShowWarning("No game selected or launch service unavailable");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LauncherViewModel] Launch error: {ex.Message}");
+                _notificationService.ShowError($"Error launching game: {ex.Message}");
+            }
+        }
+
+        [RelayCommand]
+        private async Task LaunchGameWithProfileAsync(Profile profile)
+        {
+            try
+            {
+                if (_currentGame != null && _gameLaunchService != null && profile != null)
+                {
+                    await _gameLaunchService.LaunchGameAsync(_currentGame, profile);
+                    _notificationService.ShowInformation($"Launching {_currentGame.Name} with profile '{profile.ProfileName}'...");
+                }
+                else
+                {
+                    _notificationService.ShowWarning("No game selected, launch service unavailable, or no profile selected");
+                }
+            }
+            catch (Exception ex)
+            {
+                _notificationService.ShowError($"Error launching game with profile: {ex.Message}");
+            }
+        }
+
         private void OnGameStarted(object? sender, Game game)
         {
             _dispatcher.Invoke(() =>
@@ -230,6 +336,54 @@ namespace ALGAE.ViewModels
                 PlayTime = "00:00:00";
                 CpuUsage = 0;
                 MemoryUsage = "0 MB";
+            }
+        }
+
+        /// <summary>
+        /// Loads profiles for the current game
+        /// </summary>
+        private async Task LoadProfilesAsync()
+        {
+            try
+            {
+                if (_currentGame != null && _profilesRepository != null)
+                {
+                    var profiles = await _profilesRepository.GetAllByGameIdAsync(_currentGame.GameId);
+                    
+                    _dispatcher.Invoke(() =>
+                    {
+                        Profiles.Clear();
+                        foreach (var profile in profiles)
+                        {
+                            Profiles.Add(profile);
+                        }
+                        
+                        HasProfiles = Profiles.Count > 0;
+                        
+                        // Set the first profile as default (or could be based on a specific criteria)
+                        DefaultProfile = Profiles.FirstOrDefault();
+                    });
+                }
+                else
+                {
+                    _dispatcher.Invoke(() =>
+                    {
+                        Profiles.Clear();
+                        DefaultProfile = null;
+                        HasProfiles = false;
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _dispatcher.Invoke(() =>
+                {
+                    Profiles.Clear();
+                    DefaultProfile = null;
+                    HasProfiles = false;
+                });
+                
+                _notificationService.ShowError($"Error loading profiles: {ex.Message}");
             }
         }
     }

@@ -20,6 +20,7 @@ namespace ALGAE.ViewModels
         private readonly IServiceProvider _serviceProvider;
         private readonly ICompanionLaunchService _companionLaunchService;
         private readonly IGameProcessMonitorService _processMonitor;
+        private readonly IGameLaunchService _gameLaunchService;
 
         [ObservableProperty]
         private Game? _game;
@@ -53,7 +54,8 @@ namespace ALGAE.ViewModels
             INotificationService notificationService,
             IServiceProvider serviceProvider,
             ICompanionLaunchService companionLaunchService,
-            IGameProcessMonitorService processMonitor)
+            IGameProcessMonitorService processMonitor,
+            IGameLaunchService gameLaunchService)
         {
             _gameRepository = gameRepository;
             _profilesRepository = profilesRepository;
@@ -63,6 +65,7 @@ namespace ALGAE.ViewModels
             _serviceProvider = serviceProvider;
             _companionLaunchService = companionLaunchService;
             _processMonitor = processMonitor;
+            _gameLaunchService = gameLaunchService;
 
             Profiles.CollectionChanged += (s, e) => HasProfiles = Profiles.Count > 0;
             Companions.CollectionChanged += (s, e) => HasCompanions = Companions.Count > 0;
@@ -367,40 +370,90 @@ namespace ALGAE.ViewModels
 
             try
             {
-                // Validate game executable exists
-                var executablePath = Path.Combine(game.InstallPath, game.ExecutableName ?? "");
-                
-                if (string.IsNullOrEmpty(game.ExecutableName))
+                // Open the launcher window immediately to show launch progress
+                try
                 {
-                    _notificationService.ShowError($"No executable is specified for '{game.Name}'. Please edit the game settings.");
-                    return;
+                    var launcherWindow = _serviceProvider.GetService(typeof(LauncherWindow)) as LauncherWindow;
+                    if (launcherWindow != null)
+                    {
+                        launcherWindow.Show();
+                        launcherWindow.Activate();
+                        System.Diagnostics.Debug.WriteLine("Launcher window opened to show launch progress");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error opening launcher window: {ex.Message}");
+                    // Continue with launch even if launcher window fails to open
                 }
 
-                if (!System.IO.File.Exists(executablePath))
-                {
-                    _notificationService.ShowError($"Game executable not found at: {executablePath}. Please check the game's installation path.");
-                    return;
-                }
-
-                // Check if working directory exists
-                var workingDir = game.GameWorkingPath ?? game.InstallPath;
-                if (!System.IO.Directory.Exists(workingDir))
-                {
-                    _notificationService.ShowWarning($"Working directory not found: {workingDir}. Using executable directory instead.");
-                    workingDir = System.IO.Path.GetDirectoryName(executablePath) ?? game.InstallPath;
-                }
-
-                // Determine arguments to use
-                string gameArguments;
+                // If using a profile, override the game arguments
+                Game gameToLaunch = game;
                 if (profile != null && !string.IsNullOrEmpty(profile.CommandLineArgs))
                 {
-                    gameArguments = profile.CommandLineArgs;
-                    System.Diagnostics.Debug.WriteLine($"LaunchGameWithProfileInternalAsync: Using profile '{profile.ProfileName}' arguments: {gameArguments}");
+                    // Create a copy of the game with profile-specific arguments
+                    gameToLaunch = new Game
+                    {
+                        GameId = game.GameId,
+                        Name = game.Name,
+                        ShortName = game.ShortName,
+                        Description = game.Description,
+                        GameImage = game.GameImage,
+                        ThemeName = game.ThemeName,
+                        InstallPath = game.InstallPath,
+                        GameWorkingPath = game.GameWorkingPath,
+                        ExecutableName = game.ExecutableName,
+                        GameArgs = profile.CommandLineArgs, // Use profile arguments
+                        Version = game.Version,
+                        Publisher = game.Publisher
+                    };
+                    System.Diagnostics.Debug.WriteLine($"LaunchGameWithProfileInternalAsync: Using profile '{profile.ProfileName}' arguments: {profile.CommandLineArgs}");
                 }
                 else
                 {
-                    gameArguments = game.GameArgs ?? "";
-                    System.Diagnostics.Debug.WriteLine($"LaunchGameWithProfileInternalAsync: Using default game arguments: {gameArguments}");
+                    System.Diagnostics.Debug.WriteLine($"LaunchGameWithProfileInternalAsync: Using default game arguments: {game.GameArgs}");
+                }
+
+                // First validate the game using the launch service
+                var validation = await _gameLaunchService.ValidateGameAsync(gameToLaunch);
+                if (!validation.IsValid)
+                {
+                    var editGame = await _notificationService.ShowWarningConfirmationAsync(
+                        "Cannot Launch Game", 
+                        $"{validation.ErrorMessage}\n\nWould you like to edit the game settings?",
+                        "Edit Game", "Cancel");
+                        
+                    if (editGame)
+                    {
+                        // Open the edit game dialog
+                        var dialog = new AddEditGameDialog(game);
+                        if (dialog.ShowDialog() == true && dialog.Game != null)
+                        {
+                            try
+                            {
+                                await _gameRepository.UpdateAsync(dialog.Game);
+                                
+                                // Update the current game instance
+                                Game = dialog.Game;
+                                
+                                _notificationService.ShowSuccess("Game updated successfully!");
+                            }
+                            catch (Exception ex)
+                            {
+                                _notificationService.ShowError($"Error updating game: {ex.Message}");
+                            }
+                        }
+                    }
+                    return;
+                }
+
+                // Show warnings if any
+                if (validation.Warnings.Any())
+                {
+                    foreach (var warning in validation.Warnings)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Game launch warning: {warning}");
+                    }
                 }
 
                 // Launch companions first if using a profile
@@ -419,35 +472,25 @@ namespace ALGAE.ViewModels
                     }
                 }
 
-                // Launch the game
-                var startInfo = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = executablePath,
-                    WorkingDirectory = workingDir,
-                    Arguments = gameArguments,
-                    UseShellExecute = true
-                };
-
-                var process = System.Diagnostics.Process.Start(startInfo);
+                // Launch the game using the launch service
+                var launchResult = await _gameLaunchService.LaunchGameAsync(gameToLaunch);
                 
-                if (process != null)
+                if (launchResult.Success)
                 {
-                    // Start monitoring the game process
-                    _processMonitor.StartMonitoring(game, process);
-                    
                     var profileInfo = profile != null ? $" with profile '{profile.ProfileName}'" : "";
                     _notificationService.ShowSuccess($"Successfully launched {game.Name}{profileInfo}");
-                    System.Diagnostics.Debug.WriteLine($"Successfully launched {game.Name} (PID: {process.Id}){profileInfo}");
+                    System.Diagnostics.Debug.WriteLine($"Successfully launched {game.Name} (PID: {launchResult.Process?.Id}){profileInfo}");
                 }
                 else
                 {
-                    _notificationService.ShowError($"Failed to start {game.Name}. The process could not be created.");
+                    _notificationService.ShowError($"Failed to start {game.Name}: {launchResult.ErrorMessage}");
+                    System.Diagnostics.Debug.WriteLine($"Failed to launch {game.Name}: {launchResult.ErrorMessage}");
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"LaunchGameWithProfileInternalAsync: Error launching {game.Name}: {ex.Message}");
-                throw;
+                _notificationService.ShowError($"Error launching {game.Name}: {ex.Message}. Please check the game's installation and try again.");
             }
         }
 

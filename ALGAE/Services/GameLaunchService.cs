@@ -202,6 +202,133 @@ namespace ALGAE.Services
             }
         }
 
+        public async Task<GameLaunchResult> LaunchGameAsync(Game game, Profile profile)
+        {
+            try
+            {
+                // First validate the game
+                var validation = await ValidateGameAsync(game);
+                if (!validation.IsValid)
+                {
+                    var failureArgs = new GameLaunchFailedEventArgs(game, validation.ErrorMessage ?? "Game validation failed");
+                    GameLaunchFailed?.Invoke(this, failureArgs);
+                    return GameLaunchResult.Failed(validation.ErrorMessage ?? "Game validation failed");
+                }
+
+                // Get paths
+                var executablePath = GetGameExecutablePath(game);
+                var workingDirectory = GetGameWorkingDirectory(game);
+
+                // Prepare process start info
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = executablePath,
+                    WorkingDirectory = workingDirectory,
+                    UseShellExecute = true // Use shell execute to handle file associations and admin privileges
+                };
+
+                // Use profile command line arguments first, then fallback to game arguments
+                var arguments = !string.IsNullOrWhiteSpace(profile.CommandLineArgs) 
+                    ? profile.CommandLineArgs 
+                    : game.GameArgs;
+                    
+                if (!string.IsNullOrWhiteSpace(arguments))
+                {
+                    startInfo.Arguments = arguments;
+                }
+
+                // For debugging - could be configurable
+                startInfo.WindowStyle = ProcessWindowStyle.Normal;
+
+                // Start the process
+                var process = Process.Start(startInfo);
+                
+                if (process == null)
+                {
+                    var errorMessage = "Failed to start game process. The process returned null.";
+                    await RecordFailedLaunch(game, errorMessage, executablePath, workingDirectory, arguments, profile.ProfileName);
+                    var failureArgs = new GameLaunchFailedEventArgs(game, errorMessage);
+                    GameLaunchFailed?.Invoke(this, failureArgs);
+                    return GameLaunchResult.Failed(errorMessage);
+                }
+
+                // Wait a moment to see if the process starts successfully
+                await Task.Delay(1000);
+
+                // Check if process is still running (it might exit immediately if it's a launcher)
+                if (process.HasExited)
+                {
+                    // Check exit code
+                    if (process.ExitCode != 0)
+                    {
+                        var errorMessage = $"Game process exited immediately with code {process.ExitCode}. This might indicate an error or that the game uses a launcher.";
+                        var failureArgs = new GameLaunchFailedEventArgs(game, errorMessage);
+                        GameLaunchFailed?.Invoke(this, failureArgs);
+                        return GameLaunchResult.Failed(errorMessage);
+                    }
+                    else
+                    {
+                        // Exit code 0 might be normal for some launchers - treat as success but with a note
+                        var successArgs = new GameLaunchEventArgs(game, process, DateTime.Now);
+                        GameLaunched?.Invoke(this, successArgs);
+
+                        return GameLaunchResult.Successful(process);
+                    }
+                }
+
+                // Record successful launch attempt
+                var launchId = await RecordSuccessfulLaunch(game, process, executablePath, workingDirectory, arguments, profile.ProfileName);
+                _processToLaunchId[process.Id] = launchId;
+
+                // Start monitoring the process
+                _processMonitorService.StartMonitoring(game, process);
+
+                // Raise success event
+                var launchArgs = new GameLaunchEventArgs(game, process, DateTime.Now);
+                GameLaunched?.Invoke(this, launchArgs);
+
+                return GameLaunchResult.Successful(process);
+            }
+            catch (System.ComponentModel.Win32Exception ex)
+            {
+                // Common Windows errors (file not found, access denied, etc.)
+                var errorMessage = $"Windows error launching game: {ex.Message}";
+                if (ex.NativeErrorCode == 2)
+                {
+                    errorMessage = "Game executable file not found or cannot be accessed.";
+                }
+                else if (ex.NativeErrorCode == 5)
+                {
+                    errorMessage = "Access denied. The game might require administrator privileges.";
+                }
+
+                var failureArgs = new GameLaunchFailedEventArgs(game, errorMessage, ex);
+                GameLaunchFailed?.Invoke(this, failureArgs);
+                return GameLaunchResult.Failed(errorMessage, ex);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                var errorMessage = "Access denied. Check file permissions or run as administrator.";
+                var failureArgs = new GameLaunchFailedEventArgs(game, errorMessage, ex);
+                GameLaunchFailed?.Invoke(this, failureArgs);
+                return GameLaunchResult.Failed(errorMessage, ex);
+            }
+            catch (FileNotFoundException ex)
+            {
+                var errorMessage = $"Game file not found: {ex.FileName ?? "Unknown file"}";
+                var failureArgs = new GameLaunchFailedEventArgs(game, errorMessage, ex);
+                GameLaunchFailed?.Invoke(this, failureArgs);
+                return GameLaunchResult.Failed(errorMessage, ex);
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = $"Unexpected error launching game: {ex.Message}";
+                var failureArgs = new GameLaunchFailedEventArgs(game, errorMessage, ex);
+                GameLaunchFailed?.Invoke(this, failureArgs);
+                return GameLaunchResult.Failed(errorMessage, ex);
+            }
+        }
+
         public string GetGameExecutablePath(Game game)
         {
             if (string.IsNullOrWhiteSpace(game.InstallPath) || string.IsNullOrWhiteSpace(game.ExecutableName))
@@ -249,6 +376,11 @@ namespace ALGAE.Services
 
         private async Task<int> RecordSuccessfulLaunch(Game game, Process process, string executablePath, string workingDirectory, string? arguments)
         {
+            return await RecordSuccessfulLaunch(game, process, executablePath, workingDirectory, arguments, null);
+        }
+
+        private async Task<int> RecordSuccessfulLaunch(Game game, Process process, string executablePath, string workingDirectory, string? arguments, string? profileName)
+        {
             var launchHistory = new LaunchHistory
             {
                 GameId = game.GameId,
@@ -258,7 +390,7 @@ namespace ALGAE.Services
                 ProcessId = process.Id,
                 ExecutablePath = executablePath,
                 WorkingDirectory = workingDirectory,
-                LaunchArguments = arguments
+                LaunchArguments = !string.IsNullOrWhiteSpace(profileName) ? $"{arguments} [Profile: {profileName}]" : arguments
             };
 
             return await _launchHistoryRepository.AddAsync(launchHistory);
@@ -266,13 +398,18 @@ namespace ALGAE.Services
 
         private async Task RecordFailedLaunch(Game game, string errorMessage, string? executablePath = null, string? workingDirectory = null, string? arguments = null)
         {
+            await RecordFailedLaunch(game, errorMessage, executablePath, workingDirectory, arguments, null);
+        }
+
+        private async Task RecordFailedLaunch(Game game, string errorMessage, string? executablePath = null, string? workingDirectory = null, string? arguments = null, string? profileName = null)
+        {
             var launchHistory = new LaunchHistory
             {
                 GameId = game.GameId,
                 GameName = game.Name,
                 LaunchTime = DateTime.Now,
                 Success = false,
-                ErrorMessage = errorMessage,
+                ErrorMessage = !string.IsNullOrWhiteSpace(profileName) ? $"{errorMessage} [Profile: {profileName}]" : errorMessage,
                 ExecutablePath = executablePath,
                 WorkingDirectory = workingDirectory,
                 LaunchArguments = arguments

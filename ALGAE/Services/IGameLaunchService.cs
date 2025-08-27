@@ -33,6 +33,14 @@ namespace ALGAE.Services
         Task<GameLaunchResult> LaunchGameAsync(Game game);
 
         /// <summary>
+        /// Launches a game with a specific profile and starts monitoring the process
+        /// </summary>
+        /// <param name="game">The game to launch</param>
+        /// <param name="profile">The profile to use for launching (contains command line arguments)</param>
+        /// <returns>Launch result with success flag, process info, and error message if applicable</returns>
+        Task<GameLaunchResult> LaunchGameAsync(Game game, Profile profile);
+
+        /// <summary>
         /// Gets the full executable path for a game
         /// </summary>
         /// <param name="game">The game to get the executable path for</param>

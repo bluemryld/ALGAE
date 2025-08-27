@@ -142,6 +142,39 @@ ALGAE/
 └── README.md                       # This file
 ```
 
+## 🧪 Testing
+
+ALGAE includes comprehensive unit tests covering critical business logic:
+
+- **24 unit tests** covering game launch validation, ViewModel logic, and services
+- **Test data builders** for consistent test setup
+- **Mock-based testing** with AutoMocker for dependency isolation
+- **Arrange-Act-Assert** pattern for readable tests
+
+### Running Tests
+
+```bash
+# Run all tests
+dotnet test ALGAE.Tests
+
+# Run with detailed output
+dotnet test ALGAE.Tests --logger console --verbosity normal
+```
+
+### Test Coverage
+
+✅ **Current Coverage**
+- GameLaunchService (validation, file system, launch logic)
+- GamesViewModel (data loading, search, launch commands)
+- Test infrastructure and patterns
+
+📋 **Planned Coverage**
+- Additional ViewModels (GameDetailViewModel, LauncherViewModel)
+- Repository integration tests
+- Service layer tests (CompanionLaunchService, NotificationService)
+
+For detailed testing information, see [TESTING.md](TESTING.md).
+
 ## 🔧 Configuration
 
 ### Database

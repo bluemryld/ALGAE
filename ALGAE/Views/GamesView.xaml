@@ -167,19 +167,38 @@
                                 <StackPanel Grid.Column="2" Grid.Row="0" 
                                            Orientation="Horizontal" 
                                            VerticalAlignment="Top">
-                                    <Button Command="{Binding DataContext.LaunchGameCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}"
-                                            Style="{StaticResource MaterialDesignRaisedButton}"
-                                            ToolTip="Launch this game"
-                                            Margin="0,0,8,0">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="Play" 
-                                                                     Width="16" Height="16" 
-                                                                     VerticalAlignment="Center" 
-                                                                     Margin="0,0,6,0"/>
-                                            <TextBlock Text="Launch" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
+                                    <!-- Launch Button with Profile Dropdown -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,8,0">
+                                        <!-- Main Launch Button -->
+                                        <Button Command="{Binding DataContext.LaunchGameCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                                ToolTip="Launch this game">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Play" 
+                                                                         Width="16" Height="16" 
+                                                                         VerticalAlignment="Center" 
+                                                                         Margin="0,0,6,0"/>
+                                                <TextBlock Text="Launch" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        
+                                        <!-- Profile Dropdown Button -->
+                                        <Button x:Name="ProfileDropdownButton"
+                                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                                Padding="8,0"
+                                                Margin="2,0,0,0"
+                                                ToolTip="Choose launch profile"
+                                                Click="ProfileDropdownButton_Click"
+                                                Tag="{Binding}">
+                                            <materialDesign:PackIcon Kind="ChevronDown" Width="14" Height="14"/>
+                                            <Button.ContextMenu>
+                                                <ContextMenu x:Name="GameProfileContextMenu">
+                                                    <!-- Items will be populated dynamically -->
+                                                </ContextMenu>
+                                            </Button.ContextMenu>
+                                        </Button>
+                                    </StackPanel>
 
                                     <Button Command="{Binding DataContext.ViewGameDetailsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"

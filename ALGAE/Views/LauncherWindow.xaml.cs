@@ -1,4 +1,6 @@
 using System.Windows;
+using System.Windows.Controls;
+using Algae.DAL.Models;
 using ALGAE.ViewModels;
 
 namespace ALGAE.Views
@@ -8,6 +10,8 @@ namespace ALGAE.Views
     /// </summary>
     public partial class LauncherWindow : Window
     {
+        public Game AssociatedGame { get; }
+
         public LauncherWindow()
         {
             InitializeComponent();
@@ -16,6 +20,12 @@ namespace ALGAE.Views
         public LauncherWindow(LauncherViewModel viewModel) : this()
         {
             DataContext = viewModel;
+        }
+
+        public LauncherWindow(LauncherViewModel viewModel, Game game) : this(viewModel)
+        {
+            AssociatedGame = game;
+            Title = $"ALGAE - {game.Name} Launcher";
         }
 
         private void MinimizeWindow_Click(object sender, RoutedEventArgs e)
@@ -43,6 +53,15 @@ namespace ALGAE.Views
             Show();
             Activate();
             Focus();
+        }
+
+        private void ProfileDropdownButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.ContextMenu != null)
+            {
+                button.ContextMenu.PlacementTarget = button;
+                button.ContextMenu.IsOpen = true;
+            }
         }
     }
 }

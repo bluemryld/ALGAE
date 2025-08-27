@@ -53,6 +53,33 @@
 
                 <!-- Action Buttons -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <!-- Launch Button with Profile Dropdown -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,8,0">
+                        <!-- Main Launch Button -->
+                        <Button Command="{Binding LaunchGameCommand}"
+                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                ToolTip="Launch this game">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Play" Width="18" Height="18" Margin="0,0,8,0"/>
+                                <TextBlock Text="Launch"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <!-- Profile Dropdown Button -->
+                        <Button x:Name="ProfileDropdownButton"
+                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                Padding="8,0"
+                                Margin="2,0,0,0"
+                                ToolTip="Choose launch profile"
+                                Click="ProfileDropdownButton_Click">
+                            <materialDesign:PackIcon Kind="ChevronDown" Width="16" Height="16"/>
+                            <Button.ContextMenu>
+                                <ContextMenu x:Name="ProfileContextMenu">
+                                    <!-- Items will be populated dynamically in code-behind -->
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
+                    </StackPanel>
                     <Button Command="{Binding RefreshCommand}"
                             Style="{StaticResource MaterialDesignOutlinedButton}"
                             ToolTip="Refresh game data"
