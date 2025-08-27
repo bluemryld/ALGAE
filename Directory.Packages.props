@@ -26,7 +26,7 @@
     </PackageVersion>
     <PackageVersion Include="Dapper" Version="2.1.66" />
     <PackageVersion Include="MaterialDesignThemes" Version="5.2.1" />
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="9.0.3" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="9.0.8" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.3" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
