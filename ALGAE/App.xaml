@@ -17,6 +17,7 @@
       
       <!-- Value Converters -->
       <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+      <local:InvertedBooleanConverter x:Key="InvertedBooleanConverter" />
       <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter" />
       <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
     </ResourceDictionary>

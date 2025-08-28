@@ -133,8 +133,15 @@ public partial class App : Application
                     provider.GetRequiredService<ALGAE.Services.INotificationService>(),
                     provider.GetRequiredService<ALGAE.Services.IGameLaunchService>(),
                     provider.GetRequiredService<IProfilesRepository>(),
+                    provider.GetRequiredService<ICompanionRepository>(),
+                    provider.GetRequiredService<ICompanionProfileRepository>(),
+                    provider.GetRequiredService<ALGAE.Services.ICompanionLaunchService>(),
                     provider.GetRequiredService<Dispatcher>()
                 ));
+            
+            // Register companion management ViewModels
+            services.AddTransient<ALGAE.ViewModels.CompanionsViewModel>();
+            services.AddTransient<ALGAE.ViewModels.AddEditCompanionViewModel>();
             
             // Register notification service
             services.AddSingleton<ALGAE.Services.INotificationService, ALGAE.Services.NotificationService>();
@@ -148,12 +155,17 @@ public partial class App : Application
             // Register game launch service
             services.AddSingleton<ALGAE.Services.IGameLaunchService, ALGAE.Services.GameLaunchService>();
 
+            // Register game detection service
+            services.AddTransient<ALGAE.Services.IGameDetectionService, ALGAE.Services.GameDetectionService>();
+            
             // Register repositories
             services.AddTransient<IGameRepository, GameRepository>();
             services.AddTransient<ILaunchHistoryRepository, LaunchHistoryRepository>();
             services.AddTransient<IProfilesRepository, ProfilesRepository>();
             services.AddTransient<ICompanionRepository, CompanionRepository>();
             services.AddTransient<ICompanionProfileRepository, CompanionProfileRepository>();
+            services.AddTransient<ISearchPathRepository, SearchPathRepository>();
+            services.AddTransient<IGameSignatureRepository, GameSignatureRepository>();
 
             services.AddSingleton<WeakReferenceMessenger>();
             services.AddSingleton<IMessenger, WeakReferenceMessenger>(provider => provider.GetRequiredService<WeakReferenceMessenger>());

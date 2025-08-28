@@ -209,7 +209,7 @@
                     </materialDesign:Card>
                     
                     <!-- Controls Card -->
-                    <materialDesign:Card Padding="24">
+                    <materialDesign:Card Padding="24" Margin="0,0,0,16">
                         <StackPanel>
                             <TextBlock Text="Game Controls" 
                                        Style="{StaticResource MaterialDesignHeadline6TextBlock}"
@@ -307,6 +307,124 @@
                                     </Button.ToolTip>
                                 </Button>
                             </UniformGrid>
+                        </StackPanel>
+                    </materialDesign:Card>
+                    
+                    <!-- Companions Card -->
+                    <materialDesign:Card Padding="24" Visibility="{Binding HasCompanions, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                <materialDesign:PackIcon Kind="Apps" Width="20" Height="20" 
+                                                         Foreground="{DynamicResource PrimaryHueMidBrush}"
+                                                         VerticalAlignment="Center"/>
+                                <TextBlock Text="Companion Applications" 
+                                           Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                           Margin="8,0,0,0"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                            
+                            <!-- Companions Status -->
+                            <TextBlock Text="{Binding CompanionsStatus}" 
+                                       Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                       Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                       Margin="0,0,0,16"/>
+                            
+                            <!-- Companion Control Buttons -->
+                            <UniformGrid Columns="2" Margin="0,0,0,16">
+                                <Button Content="Start All" 
+                                        Command="{Binding StartAllCompanionsCommand}"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Background="{DynamicResource PrimaryHueMidBrush}"
+                                        Margin="2">
+                                    <Button.ToolTip>
+                                        <ToolTip Content="Start all companion applications"/>
+                                    </Button.ToolTip>
+                                </Button>
+                                
+                                <Button Content="Stop All" 
+                                        Command="{Binding StopAllCompanionsCommand}"
+                                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                                        Foreground="{DynamicResource MaterialDesignValidationErrorBrush}"
+                                        BorderBrush="{DynamicResource MaterialDesignValidationErrorBrush}"
+                                        Margin="2">
+                                    <Button.ToolTip>
+                                        <ToolTip Content="Stop all running companion applications"/>
+                                    </Button.ToolTip>
+                                </Button>
+                            </UniformGrid>
+                            
+                            <!-- Companions List -->
+                            <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding Companions}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <materialDesign:Card Margin="0,0,0,8" Padding="12">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    
+                                                    <!-- Status Icon -->
+                                                    <materialDesign:PackIcon Grid.Column="0" 
+                                                                             Kind="{Binding StatusIcon}" 
+                                                                             Width="16" Height="16" 
+                                                                             Foreground="{Binding StatusColor}"
+                                                                             VerticalAlignment="Center"
+                                                                             Margin="0,0,8,0"/>
+                                                    
+                                                    <!-- Companion Info -->
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Companion.Name}" 
+                                                                   Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                                                   FontWeight="SemiBold"/>
+                                                        <TextBlock Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                                                   Foreground="{DynamicResource MaterialDesignBodyLight}">
+                                                            <TextBlock.Text>
+                                                                <MultiBinding StringFormat="{}{0} • {1}">
+                                                                    <Binding Path="Status"/>
+                                                                    <Binding Path="Companion.Type"/>
+                                                                </MultiBinding>
+                                                            </TextBlock.Text>
+                                                        </TextBlock>
+                                                        <TextBlock Text="{Binding ErrorMessage}" 
+                                                                   Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                                                   Foreground="{DynamicResource MaterialDesignValidationErrorBrush}"
+                                                                   Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                   TextWrapping="Wrap"/>
+                                                    </StackPanel>
+                                                    
+                                                    <!-- Start Button -->
+                                                    <Button Grid.Column="2" 
+                                                            Command="{Binding DataContext.StartCompanionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"
+                                                            Style="{StaticResource MaterialDesignIconButton}"
+                                                            ToolTip="Start companion"
+                                                            Visibility="{Binding CanStart, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                            Margin="4,0">
+                                                        <materialDesign:PackIcon Kind="Play" Width="16" Height="16" 
+                                                                                 Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                                    </Button>
+                                                    
+                                                    <!-- Stop Button -->
+                                                    <Button Grid.Column="3" 
+                                                            Command="{Binding DataContext.StopCompanionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"
+                                                            Style="{StaticResource MaterialDesignIconButton}"
+                                                            ToolTip="Stop companion"
+                                                            Visibility="{Binding CanStop, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                            Margin="4,0">
+                                                        <materialDesign:PackIcon Kind="Stop" Width="16" Height="16" 
+                                                                                 Foreground="{DynamicResource MaterialDesignValidationErrorBrush}"/>
+                                                    </Button>
+                                                </Grid>
+                                            </materialDesign:Card>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
                         </StackPanel>
                     </materialDesign:Card>
                     

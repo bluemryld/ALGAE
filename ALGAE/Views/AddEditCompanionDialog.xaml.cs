@@ -1,6 +1,5 @@
 using System.Windows;
-using Algae.DAL.Models;
-using Microsoft.Win32;
+using ALGAE.ViewModels;
 
 namespace ALGAE.Views
 {
@@ -16,11 +15,8 @@ namespace ALGAE.Views
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            var companion = DataContext as Companion;
-            if (companion != null && 
-                !string.IsNullOrWhiteSpace(companion.Name) && 
-                !string.IsNullOrWhiteSpace(companion.Type) &&
-                !string.IsNullOrWhiteSpace(companion.PathOrURL))
+            var viewModel = DataContext as AddEditCompanionViewModel;
+            if (viewModel != null && viewModel.ValidateCompanion())
             {
                 DialogResult = true;
                 Close();
@@ -31,41 +27,6 @@ namespace ALGAE.Views
         {
             DialogResult = false;
             Close();
-        }
-
-        private void BrowseButton_Click(object sender, RoutedEventArgs e)
-        {
-            var companion = DataContext as Companion;
-            if (companion == null) return;
-
-            if (companion.Type == "Executable" || companion.Type == "Script")
-            {
-                var openFileDialog = new OpenFileDialog
-                {
-                    Title = "Select Application",
-                    Filter = "Executable files (*.exe)|*.exe|All files (*.*)|*.*",
-                    CheckFileExists = true
-                };
-
-                if (openFileDialog.ShowDialog() == true)
-                {
-                    companion.PathOrURL = openFileDialog.FileName;
-                }
-            }
-            else if (companion.Type == "Document")
-            {
-                var openFileDialog = new OpenFileDialog
-                {
-                    Title = "Select Document",
-                    Filter = "All files (*.*)|*.*",
-                    CheckFileExists = true
-                };
-
-                if (openFileDialog.ShowDialog() == true)
-                {
-                    companion.PathOrURL = openFileDialog.FileName;
-                }
-            }
         }
     }
 }

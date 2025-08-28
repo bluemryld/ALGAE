@@ -3,6 +3,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ALGAE.Views;
 using Microsoft.Extensions.DependencyInjection;
+using ALGAE.DAL.Repositories;
+using System.Windows;
 
 namespace ALGAE.ViewModels
 {
@@ -47,6 +49,8 @@ namespace ALGAE.ViewModels
             {
                 new MenuItem { Name = "Home", ViewName = "Home", Icon = "pack://application:,,,/Resources/home_icon.png" },
                 new MenuItem { Name = "Games", ViewName = "Games", Icon = "pack://application:,,,/Resources/games_icon.png" },
+                new MenuItem { Name = "Signatures", ViewName = "Signatures", Icon = "pack://application:,,,/Resources/signatures_icon.png" },
+                new MenuItem { Name = "Companions", ViewName = "Companions", Icon = "pack://application:,,,/Resources/apps_icon.png" },
                 new MenuItem { Name = "Launcher", ViewName = "Launcher", Icon = "pack://application:,,,/Resources/launcher_icon.png" },
             };
 
@@ -79,6 +83,16 @@ namespace ALGAE.ViewModels
         }
         
         [RelayCommand]
+        private void NavigateToCompanions()
+        {
+            var companionsMenuItem = MenuItems.FirstOrDefault(m => m.ViewName == "Companions");
+            if (companionsMenuItem != null)
+            {
+                SelectedMenuItem = companionsMenuItem;
+            }
+        }
+        
+        [RelayCommand]
         private void NavigateToLauncher()
         {
             try
@@ -99,6 +113,27 @@ namespace ALGAE.ViewModels
             if (_selectedMenuItem != null)
             {
                 SwitchView(_selectedMenuItem);
+            }
+        }
+
+        [RelayCommand]
+        private void ManageSearchPaths()
+        {
+            try
+            {
+                var searchPathRepository = _serviceProvider.GetRequiredService<ISearchPathRepository>();
+                var dialog = new SearchPathManagementDialog(searchPathRepository)
+                {
+                    Owner = Application.Current.MainWindow
+                };
+                
+                dialog.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error opening search path management dialog: {ex.Message}");
+                MessageBox.Show($"Error opening search path management dialog: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -152,6 +187,36 @@ namespace ALGAE.ViewModels
             }
         }
 
+        private object? CreateCompanionsView()
+        {
+            try
+            {
+                var companionsViewModel = _serviceProvider.GetRequiredService<CompanionsViewModel>();
+                var companionsView = new CompanionsView { DataContext = companionsViewModel };
+                return companionsView;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error creating CompanionsView: {ex.Message}");
+                return null;
+            }
+        }
+
+        private object? CreateGameSignaturesView()
+        {
+            try
+            {
+                var gameSignaturesViewModel = _serviceProvider.GetRequiredService<GameSignaturesViewModel>();
+                var gameSignaturesView = new GameSignaturesView { DataContext = gameSignaturesViewModel };
+                return gameSignaturesView;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error creating GameSignaturesView: {ex.Message}");
+                return null;
+            }
+        }
+
         private void SwitchView(MenuItem? menuItem)
         {
             System.Diagnostics.Debug.WriteLine($"SwitchView called with menuItem: {menuItem?.Name ?? "null"}");
@@ -170,6 +235,8 @@ namespace ALGAE.ViewModels
                 {
                     "Home" => CreateHomeView(),
                     "Games" => CreateGamesView(),
+                    "Signatures" => CreateGameSignaturesView(),
+                    "Companions" => CreateCompanionsView(),
                     _ => null
                 };
                 

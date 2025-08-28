@@ -7,6 +7,7 @@ using Algae.DAL.Models;
 using ALGAE.DAL.Repositories;
 using ALGAE.Services;
 using ALGAE.Views;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ALGAE.ViewModels
 {
@@ -239,30 +240,31 @@ namespace ALGAE.ViewModels
         [RelayCommand]
         private async Task AddCompanionAsync()
         {
-            var dialog = new AddEditCompanionDialog();
-            var companion = new Companion();
-            
-            // Set the GameId for this companion (null means applies to all games)
-            if (Game != null)
+            try
             {
-                companion.GameId = Game.GameId;  // Game-specific companion
-            }
-            // If GameId remains null, it applies to all games (global companion)
-            
-            dialog.DataContext = companion;
-
-            if (dialog.ShowDialog() == true)
-            {
-                try
+                var viewModel = _serviceProvider.GetRequiredService<AddEditCompanionViewModel>();
+                await viewModel.LoadGamesAsync();
+                
+                // Pre-select current game if we have one
+                if (Game != null)
                 {
+                    viewModel.SetPreselectedGame(Game);
+                }
+
+                var dialog = new AddEditCompanionDialog();
+                dialog.DataContext = viewModel;
+
+                if (dialog.ShowDialog() == true)
+                {
+                    var companion = viewModel.CreateCompanion();
                     await _companionRepository.AddAsync(companion);
                     Companions.Add(companion);
                     _notificationService.ShowSuccess("Companion added successfully!");
                 }
-                catch (Exception ex)
-                {
-                    _notificationService.ShowError($"Error adding companion: {ex.Message}");
-                }
+            }
+            catch (Exception ex)
+            {
+                _notificationService.ShowError($"Error adding companion: {ex.Message}");
             }
         }
 
@@ -271,36 +273,31 @@ namespace ALGAE.ViewModels
         {
             if (companion == null) return;
 
-            var dialog = new AddEditCompanionDialog();
-            var editCompanion = new Companion
+            try
             {
-                CompanionId = companion.CompanionId,
-                GameId = companion.GameId,
-                Name = companion.Name,
-                Type = companion.Type,
-                PathOrURL = companion.PathOrURL,
-                LaunchHelper = companion.LaunchHelper,
-                Browser = companion.Browser,
-                OpenInNewWindow = companion.OpenInNewWindow
-            };
-            dialog.DataContext = editCompanion;
+                var viewModel = _serviceProvider.GetRequiredService<AddEditCompanionViewModel>();
+                await viewModel.LoadGamesAsync();
+                viewModel.LoadCompanion(companion);
 
-            if (dialog.ShowDialog() == true)
-            {
-                try
+                var dialog = new AddEditCompanionDialog();
+                dialog.DataContext = viewModel;
+
+                if (dialog.ShowDialog() == true)
                 {
-                    await _companionRepository.UpdateAsync(editCompanion);
+                    var editedCompanion = viewModel.CreateCompanion();
+                    await _companionRepository.UpdateAsync(editedCompanion);
+                    
                     var index = Companions.IndexOf(companion);
                     if (index >= 0)
                     {
-                        Companions[index] = editCompanion;
+                        Companions[index] = editedCompanion;
                     }
                     _notificationService.ShowSuccess("Companion updated successfully!");
                 }
-                catch (Exception ex)
-                {
-                    _notificationService.ShowError($"Error updating companion: {ex.Message}");
-                }
+            }
+            catch (Exception ex)
+            {
+                _notificationService.ShowError($"Error updating companion: {ex.Message}");
             }
         }
 
@@ -376,6 +373,12 @@ namespace ALGAE.ViewModels
                     var launcherWindow = _serviceProvider.GetService(typeof(LauncherWindow)) as LauncherWindow;
                     if (launcherWindow != null)
                     {
+                        // Set the current profile for companion loading
+                        if (launcherWindow.DataContext is LauncherViewModel launcherVM)
+                        {
+                            await launcherVM.SetCurrentProfileAsync(profile);
+                        }
+                        
                         launcherWindow.Show();
                         launcherWindow.Activate();
                         System.Diagnostics.Debug.WriteLine("Launcher window opened to show launch progress");

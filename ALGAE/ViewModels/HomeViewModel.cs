@@ -13,12 +13,14 @@ namespace ALGAE.ViewModels
         private readonly IServiceProvider _serviceProvider;
         private readonly IGameRepository _gameRepository;
         private readonly INotificationService _notificationService;
+        private readonly IGameDetectionService _gameDetectionService;
 
-        public HomeViewModel(IServiceProvider serviceProvider, IGameRepository gameRepository, INotificationService notificationService)
+        public HomeViewModel(IServiceProvider serviceProvider, IGameRepository gameRepository, INotificationService notificationService, IGameDetectionService gameDetectionService)
         {
             _serviceProvider = serviceProvider;
             _gameRepository = gameRepository;
             _notificationService = notificationService;
+            _gameDetectionService = gameDetectionService;
         }
 
         [RelayCommand]
@@ -44,14 +46,81 @@ namespace ALGAE.ViewModels
         {
             try
             {
-                _notificationService.ShowInformation("Game scanning functionality will be implemented in a future update.");
+                // Get search paths first
+                var searchPaths = await _gameDetectionService.GetSearchPathsAsync();
+                var directories = searchPaths.Select(sp => sp.Path).ToList();
+
+                if (!directories.Any())
+                {
+                    // If no search paths configured, get common game directories
+                    directories = await _gameDetectionService.GetCommonGameDirectoriesAsync();
+                    
+                    if (!directories.Any())
+                    {
+                        _notificationService.ShowWarning("No game directories found to scan. Please configure search paths in settings.");
+                        return;
+                    }
+                }
+
+                // Create and show progress dialog
+                var progressViewModel = new GameScanProgressViewModel(_gameDetectionService, _notificationService);
+                var progressDialog = new Views.GameScanProgressDialog(progressViewModel)
+                {
+                    Owner = System.Windows.Application.Current.MainWindow
+                };
+
+                // Handle dialog close and scan completion
+                progressViewModel.CloseRequested += (s, e) => progressDialog.Close();
+
+                // Set up scan completion handler to show verification dialog
+                progressViewModel.ScanCompleted += async (s, e) =>
+                {
+                    try
+                    {
+                        // Process results if scan completed successfully
+                        if (progressViewModel.Result != null && !progressViewModel.WasCancelled)
+                        {
+                            var result = progressViewModel.Result;
+                            
+                            if (result.DetectedGames.Any())
+                            {
+                                // Show verification dialog for user approval
+                                await Application.Current.Dispatcher.InvokeAsync(() =>
+                                {
+                                    ShowGameVerificationDialog(result.DetectedGames.ToList());
+                                });
+                            }
+                            else
+                            {
+                                _notificationService.ShowInformation("No games were detected in the scanned directories.");
+                            }
+                            
+                            if (result.Errors.Any())
+                            {
+                                var errorMessage = string.Join("\n", result.Errors.Take(3));
+                                _notificationService.ShowWarning($"Scan completed with some errors:\n{errorMessage}");
+                            }
+                        }
+                        else if (progressViewModel.WasCancelled)
+                        {
+                            _notificationService.ShowInformation("Game scan was cancelled.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _notificationService.ShowError($"Error processing scan results: {ex.Message}");
+                    }
+                };
+
+                // Start the scan asynchronously (don't await here)
+                _ = progressViewModel.StartScanAsync(directories);
                 
-                // TODO: Implement game scanning
-                // This would scan common game directories and auto-add discovered games
+                // Show the dialog (non-blocking)
+                progressDialog.Show();
             }
             catch (Exception ex)
             {
-                _notificationService.ShowError($"Error scanning for games: {ex.Message}");
+                _notificationService.ShowError($"Error during game scan: {ex.Message}");
             }
         }
 
@@ -83,6 +152,43 @@ namespace ALGAE.ViewModels
             catch (Exception ex)
             {
                 _notificationService.ShowError($"Error opening settings: {ex.Message}");
+            }
+        }
+        
+        private async void ShowGameVerificationDialog(List<DetectedGame> detectedGames)
+        {
+            try
+            {
+                // Filter out games that already exist to avoid confusion
+                var newGames = detectedGames.Where(g => !g.AlreadyExists).ToList();
+                
+                if (!newGames.Any())
+                {
+                    _notificationService.ShowInformation("All detected games are already in your library.");
+                    return;
+                }
+                
+                var verificationViewModel = new GameVerificationViewModel(detectedGames);
+                var verificationDialog = new GameVerificationDialog(verificationViewModel)
+                {
+                    Owner = Application.Current.MainWindow
+                };
+                
+                var result = verificationDialog.ShowDialog();
+                
+                if (result == true)
+                {
+                    var selectedGames = verificationViewModel.GetSelectedGames();
+                    if (selectedGames.Any())
+                    {
+                        var addedCount = await _gameDetectionService.AddDetectedGamesToLibraryAsync(selectedGames);
+                        _notificationService.ShowSuccess($"Added {addedCount} games to your library!");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _notificationService.ShowError($"Error showing game verification dialog: {ex.Message}");
             }
         }
     }

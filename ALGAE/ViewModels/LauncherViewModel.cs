@@ -23,8 +23,12 @@ namespace ALGAE.ViewModels
         private readonly INotificationService _notificationService;
         private readonly IGameLaunchService _gameLaunchService;
         private readonly IProfilesRepository _profilesRepository;
+        private readonly ICompanionRepository _companionRepository;
+        private readonly ICompanionProfileRepository _companionProfileRepository;
+        private readonly ICompanionLaunchService _companionLaunchService;
         private readonly Dispatcher _dispatcher;
         private Game? _currentGame;
+        private Profile? _currentProfile;
 
         [ObservableProperty]
         private bool _hasRunningGame;
@@ -74,6 +78,18 @@ namespace ALGAE.ViewModels
         [ObservableProperty]
         private bool _hasProfiles;
 
+        [ObservableProperty]
+        private ObservableCollection<CompanionStatus> _companions = new();
+
+        [ObservableProperty]
+        private bool _hasCompanions;
+
+        [ObservableProperty]
+        private int _runningCompanionsCount;
+
+        [ObservableProperty]
+        private string _companionsStatus = "No companions";
+
         public ObservableCollection<GameSession> RecentSessions => _processMonitor.RecentSessions;
 
         public LauncherViewModel(IGameProcessMonitorService processMonitor, INotificationService notificationService, Dispatcher dispatcher)
@@ -92,12 +108,23 @@ namespace ALGAE.ViewModels
             UpdateSessionStats();
         }
 
-        public LauncherViewModel(IGameProcessMonitorService processMonitor, INotificationService notificationService, IGameLaunchService gameLaunchService, IProfilesRepository profilesRepository, Dispatcher dispatcher)
+        public LauncherViewModel(
+            IGameProcessMonitorService processMonitor, 
+            INotificationService notificationService, 
+            IGameLaunchService gameLaunchService, 
+            IProfilesRepository profilesRepository, 
+            ICompanionRepository companionRepository,
+            ICompanionProfileRepository companionProfileRepository,
+            ICompanionLaunchService companionLaunchService,
+            Dispatcher dispatcher)
         {
             _processMonitor = processMonitor;
             _notificationService = notificationService;
             _gameLaunchService = gameLaunchService;
             _profilesRepository = profilesRepository;
+            _companionRepository = companionRepository;
+            _companionProfileRepository = companionProfileRepository;
+            _companionLaunchService = companionLaunchService;
             _dispatcher = dispatcher;
 
             // Subscribe to process monitor events
@@ -105,9 +132,19 @@ namespace ALGAE.ViewModels
             _processMonitor.GameStopped += OnGameStopped;
             _processMonitor.StatsUpdated += OnStatsUpdated;
 
+            // Initialize collections
+            Companions.CollectionChanged += (s, e) =>
+            {
+                HasCompanions = Companions.Count > 0;
+                UpdateCompanionsStatus();
+            };
+
             // Initialize with current state
             UpdateGameState();
             UpdateSessionStats();
+            
+            // Start companion monitoring timer
+            StartCompanionMonitoring();
         }
 
         [RelayCommand]
@@ -220,15 +257,24 @@ namespace ALGAE.ViewModels
                 
                 if (_currentGame != null && _gameLaunchService != null)
                 {
-                    // If we have a default profile, use it; otherwise use the basic launch
-                    if (DefaultProfile != null)
+                    // Check if this is "Game only" mode
+                    if (DefaultProfile != null && DefaultProfile.ProfileId == -1)
                     {
+                        // "Game only" mode - launch with game's command line args only, no companions
+                        System.Diagnostics.Debug.WriteLine($"[LauncherViewModel] Launching in 'Game only' mode");
+                        await _gameLaunchService.LaunchGameAsync(_currentGame);
+                        _notificationService.ShowInformation($"Launching {_currentGame.Name} (Game only)...");
+                    }
+                    else if (DefaultProfile != null)
+                    {
+                        // Real profile - launch with profile
                         System.Diagnostics.Debug.WriteLine($"[LauncherViewModel] Launching with profile: {DefaultProfile.ProfileName}");
                         await _gameLaunchService.LaunchGameAsync(_currentGame, DefaultProfile);
                         _notificationService.ShowInformation($"Launching {_currentGame.Name} with profile '{DefaultProfile.ProfileName}'...");
                     }
                     else
                     {
+                        // Fallback - basic launch
                         System.Diagnostics.Debug.WriteLine($"[LauncherViewModel] Launching without profile");
                         await _gameLaunchService.LaunchGameAsync(_currentGame);
                         _notificationService.ShowInformation($"Launching {_currentGame.Name}...");
@@ -246,7 +292,6 @@ namespace ALGAE.ViewModels
                 _notificationService.ShowError($"Error launching game: {ex.Message}");
             }
         }
-
         [RelayCommand]
         private async Task LaunchGameWithProfileAsync(Profile profile)
         {
@@ -254,8 +299,19 @@ namespace ALGAE.ViewModels
             {
                 if (_currentGame != null && _gameLaunchService != null && profile != null)
                 {
-                    await _gameLaunchService.LaunchGameAsync(_currentGame, profile);
-                    _notificationService.ShowInformation($"Launching {_currentGame.Name} with profile '{profile.ProfileName}'...");
+                    // Check if this is "Game only" mode
+                    if (profile.ProfileId == -1)
+                    {
+                        // "Game only" mode - launch with game's command line args only
+                        await _gameLaunchService.LaunchGameAsync(_currentGame);
+                        _notificationService.ShowInformation($"Launching {_currentGame.Name} (Game only)...");
+                    }
+                    else
+                    {
+                        // Real profile - launch with profile
+                        await _gameLaunchService.LaunchGameAsync(_currentGame, profile);
+                        _notificationService.ShowInformation($"Launching {_currentGame.Name} with profile '{profile.ProfileName}'...");
+                    }
                 }
                 else
                 {
@@ -353,15 +409,27 @@ namespace ALGAE.ViewModels
                     _dispatcher.Invoke(() =>
                     {
                         Profiles.Clear();
+                        
+                        // Add "Game only" as the first/default option
+                        var gameOnlyProfile = new Profile
+                        {
+                            ProfileId = -1, // Special ID for "Game only" mode
+                            GameId = _currentGame.GameId,
+                            ProfileName = "Game only",
+                            CommandLineArgs = _currentGame.GameArgs
+                        };
+                        Profiles.Add(gameOnlyProfile);
+                        
+                        // Add actual profiles
                         foreach (var profile in profiles)
                         {
                             Profiles.Add(profile);
                         }
                         
-                        HasProfiles = Profiles.Count > 0;
+                        HasProfiles = Profiles.Count > 1; // Only true if there are actual profiles beyond "Game only"
                         
-                        // Set the first profile as default (or could be based on a specific criteria)
-                        DefaultProfile = Profiles.FirstOrDefault();
+                        // Set "Game only" as default
+                        DefaultProfile = gameOnlyProfile;
                     });
                 }
                 else
@@ -369,8 +437,26 @@ namespace ALGAE.ViewModels
                     _dispatcher.Invoke(() =>
                     {
                         Profiles.Clear();
-                        DefaultProfile = null;
-                        HasProfiles = false;
+                        
+                        if (_currentGame != null)
+                        {
+                            // Even without profiles repository, create "Game only" option
+                            var gameOnlyProfile = new Profile
+                            {
+                                ProfileId = -1,
+                                GameId = _currentGame.GameId,
+                                ProfileName = "Game only",
+                                CommandLineArgs = _currentGame.GameArgs
+                            };
+                            Profiles.Add(gameOnlyProfile);
+                            DefaultProfile = gameOnlyProfile;
+                            HasProfiles = false; // No actual profiles available
+                        }
+                        else
+                        {
+                            DefaultProfile = null;
+                            HasProfiles = false;
+                        }
                     });
                 }
             }
@@ -379,12 +465,355 @@ namespace ALGAE.ViewModels
                 _dispatcher.Invoke(() =>
                 {
                     Profiles.Clear();
-                    DefaultProfile = null;
+                    
+                    if (_currentGame != null)
+                    {
+                        // Create "Game only" option even on error
+                        var gameOnlyProfile = new Profile
+                        {
+                            ProfileId = -1,
+                            GameId = _currentGame.GameId,
+                            ProfileName = "Game only",
+                            CommandLineArgs = _currentGame.GameArgs
+                        };
+                        Profiles.Add(gameOnlyProfile);
+                        DefaultProfile = gameOnlyProfile;
+                    }
+                    else
+                    {
+                        DefaultProfile = null;
+                    }
                     HasProfiles = false;
                 });
                 
                 _notificationService.ShowError($"Error loading profiles: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Sets the current profile and loads its companions
+        /// </summary>
+        public async Task SetCurrentProfileAsync(Profile? profile)
+        {
+            _currentProfile = profile;
+            
+            // Only load companions if this is not "Game only" mode
+            if (profile == null || profile.ProfileId == -1)
+            {
+                // "Game only" mode - clear companions
+                _dispatcher.Invoke(() =>
+                {
+                    Companions.Clear();
+                    HasCompanions = false;
+                    UpdateCompanionsStatus();
+                });
+            }
+            else
+            {
+                // Real profile - load its companions
+                await LoadCompanionsAsync();
+            }
+        }
+
+        /// <summary>
+        /// Loads companions for the current profile
+        /// </summary>
+        private async Task LoadCompanionsAsync()
+        {
+            try
+            {
+                if (_currentProfile != null && _companionRepository != null && _companionProfileRepository != null)
+                {
+                    // Get companions associated with this profile
+                    var companionProfiles = await _companionProfileRepository.GetByProfileIdAsync(_currentProfile.ProfileId);
+                    var companions = new List<Companion>();
+                    
+                    foreach (var cp in companionProfiles.Where(cp => cp.IsEnabled))
+                    {
+                        var companion = await _companionRepository.GetByIdAsync(cp.CompanionId);
+                        if (companion != null)
+                        {
+                            companions.Add(companion);
+                        }
+                    }
+
+                    _dispatcher.Invoke(() =>
+                    {
+                        Companions.Clear();
+                        foreach (var companion in companions)
+                        {
+                            var status = new CompanionStatus
+                            {
+                                Companion = companion,
+                                IsRunning = false,
+                                Status = "Stopped",
+                                StatusIcon = "Stop",
+                                StatusColor = Brushes.Gray
+                            };
+                            Companions.Add(status);
+                        }
+                        
+                        HasCompanions = Companions.Count > 0;
+                        UpdateCompanionsStatus();
+                    });
+                }
+                else if (_currentGame != null && _companionRepository != null)
+                {
+                    // Load global and game-specific companions when no profile is set
+                    var companions = await _companionRepository.GetForGameAsync(_currentGame.GameId);
+                    
+                    _dispatcher.Invoke(() =>
+                    {
+                        Companions.Clear();
+                        foreach (var companion in companions)
+                        {
+                            var status = new CompanionStatus
+                            {
+                                Companion = companion,
+                                IsRunning = false,
+                                Status = "Stopped",
+                                StatusIcon = "Stop",
+                                StatusColor = Brushes.Gray
+                            };
+                            Companions.Add(status);
+                        }
+                        
+                        HasCompanions = Companions.Count > 0;
+                        UpdateCompanionsStatus();
+                    });
+                }
+                else
+                {
+                    _dispatcher.Invoke(() =>
+                    {
+                        Companions.Clear();
+                        HasCompanions = false;
+                        UpdateCompanionsStatus();
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _dispatcher.Invoke(() =>
+                {
+                    Companions.Clear();
+                    HasCompanions = false;
+                    UpdateCompanionsStatus();
+                });
+                
+                _notificationService.ShowError($"Error loading companions: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Start a specific companion
+        /// </summary>
+        [RelayCommand]
+        private async Task StartCompanionAsync(CompanionStatus companionStatus)
+        {
+            if (companionStatus?.Companion == null || companionStatus.IsRunning) return;
+
+            try
+            {
+                var companionProcess = await _companionLaunchService.LaunchCompanionAsync(companionStatus.Companion);
+                if (companionProcess?.Process != null)
+                {
+                    companionStatus.Process = companionProcess.Process;
+                    companionStatus.IsRunning = true;
+                    companionStatus.StartTime = DateTime.Now;
+                    companionStatus.Status = "Running";
+                    companionStatus.StatusIcon = "CheckCircle";
+                    companionStatus.StatusColor = Brushes.Green;
+                    companionStatus.ErrorMessage = string.Empty;
+
+                    _notificationService.ShowSuccess($"Started {companionStatus.Companion.Name}");
+                    UpdateCompanionsStatus();
+                }
+            }
+            catch (Exception ex)
+            {
+                companionStatus.ErrorMessage = ex.Message;
+                companionStatus.Status = "Error";
+                companionStatus.StatusIcon = "AlertCircle";
+                companionStatus.StatusColor = Brushes.Red;
+                
+                _notificationService.ShowError($"Failed to start {companionStatus.Companion.Name}: {ex.Message}");
+                UpdateCompanionsStatus();
+            }
+        }
+
+        /// <summary>
+        /// Stop a specific companion
+        /// </summary>
+        [RelayCommand]
+        private async Task StopCompanionAsync(CompanionStatus companionStatus)
+        {
+            if (companionStatus?.Process == null || !companionStatus.IsRunning) return;
+
+            try
+            {
+                // Create a CompanionProcess wrapper for the stop method
+                var companionProcess = new CompanionProcess
+                {
+                    CompanionId = companionStatus.Companion.CompanionId,
+                    CompanionName = companionStatus.Companion.Name ?? string.Empty,
+                    ProcessId = companionStatus.Process.Id,
+                    Process = companionStatus.Process
+                };
+                
+                await _companionLaunchService.StopCompanionAsync(companionProcess);
+                
+                companionStatus.Process = null;
+                companionStatus.IsRunning = false;
+                companionStatus.StartTime = null;
+                companionStatus.Status = "Stopped";
+                companionStatus.StatusIcon = "Stop";
+                companionStatus.StatusColor = Brushes.Gray;
+                companionStatus.ErrorMessage = string.Empty;
+
+                _notificationService.ShowInformation($"Stopped {companionStatus.Companion.Name}");
+                UpdateCompanionsStatus();
+            }
+            catch (Exception ex)
+            {
+                _notificationService.ShowError($"Failed to stop {companionStatus.Companion.Name}: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Start all companions
+        /// </summary>
+        [RelayCommand]
+        private async Task StartAllCompanionsAsync()
+        {
+            var companionsToStart = Companions.Where(c => c.CanStart).ToList();
+            var startedCount = 0;
+
+            foreach (var companion in companionsToStart)
+            {
+                try
+                {
+                    await StartCompanionAsync(companion);
+                    startedCount++;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error starting companion {companion.Companion.Name}: {ex.Message}");
+                }
+            }
+
+            if (startedCount > 0)
+            {
+                _notificationService.ShowSuccess($"Started {startedCount} companion(s)");
+            }
+        }
+
+        /// <summary>
+        /// Stop all running companions
+        /// </summary>
+        [RelayCommand]
+        private async Task StopAllCompanionsAsync()
+        {
+            var companionsToStop = Companions.Where(c => c.CanStop).ToList();
+            var stoppedCount = 0;
+
+            foreach (var companion in companionsToStop)
+            {
+                try
+                {
+                    await StopCompanionAsync(companion);
+                    stoppedCount++;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error stopping companion {companion.Companion.Name}: {ex.Message}");
+                }
+            }
+
+            if (stoppedCount > 0)
+            {
+                _notificationService.ShowInformation($"Stopped {stoppedCount} companion(s)");
+            }
+        }
+
+        /// <summary>
+        /// Updates the companions status summary
+        /// </summary>
+        private void UpdateCompanionsStatus()
+        {
+            RunningCompanionsCount = Companions.Count(c => c.IsRunning);
+            
+            if (Companions.Count == 0)
+            {
+                CompanionsStatus = "No companions";
+            }
+            else if (RunningCompanionsCount == 0)
+            {
+                CompanionsStatus = $"{Companions.Count} companion(s) - None running";
+            }
+            else if (RunningCompanionsCount == Companions.Count)
+            {
+                CompanionsStatus = $"{Companions.Count} companion(s) - All running";
+            }
+            else
+            {
+                CompanionsStatus = $"{RunningCompanionsCount}/{Companions.Count} companions running";
+            }
+        }
+
+        private DispatcherTimer? _companionMonitorTimer;
+
+        /// <summary>
+        /// Starts monitoring companion processes
+        /// </summary>
+        private void StartCompanionMonitoring()
+        {
+            _companionMonitorTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(2)
+            };
+            
+            _companionMonitorTimer.Tick += (s, e) => MonitorCompanions();
+            _companionMonitorTimer.Start();
+        }
+
+        /// <summary>
+        /// Monitors companion processes for status changes
+        /// </summary>
+        private void MonitorCompanions()
+        {
+            foreach (var companionStatus in Companions)
+            {
+                if (companionStatus.Process != null)
+                {
+                    try
+                    {
+                        // Check if process is still running
+                        companionStatus.Process.Refresh();
+                        if (companionStatus.Process.HasExited)
+                        {
+                            companionStatus.Process = null;
+                            companionStatus.IsRunning = false;
+                            companionStatus.StartTime = null;
+                            companionStatus.Status = "Stopped";
+                            companionStatus.StatusIcon = "Stop";
+                            companionStatus.StatusColor = Brushes.Gray;
+                        }
+                    }
+                    catch
+                    {
+                        // Process might be null or disposed
+                        companionStatus.Process = null;
+                        companionStatus.IsRunning = false;
+                        companionStatus.StartTime = null;
+                        companionStatus.Status = "Stopped";
+                        companionStatus.StatusIcon = "Stop";
+                        companionStatus.StatusColor = Brushes.Gray;
+                    }
+                }
+            }
+            
+            UpdateCompanionsStatus();
         }
     }
 }
