@@ -209,8 +209,7 @@
                     Command="{Binding CancelCommand}"
                     Style="{StaticResource MaterialDesignOutlinedButton}"
                     Margin="0,0,8,0"/>
-            <Button Content="Add Selected Games" 
-                    Command="{Binding AddSelectedGamesCommand}"
+            <Button Command="{Binding AddSelectedGamesCommand}"
                     Style="{StaticResource MaterialDesignRaisedButton}"
                     IsEnabled="{Binding HasSelectedGames}">
                 <Button.Content>

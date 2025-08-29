@@ -81,8 +81,10 @@ namespace ALGAE.ViewModels
                 
                 if (Game != null)
                 {
-                    await LoadProfilesAsync();
-                    await LoadCompanionsAsync();
+                    // Load profiles and companions in parallel for better performance
+                    var profilesTask = LoadProfilesAsync();
+                    var companionsTask = LoadCompanionsAsync();
+                    await Task.WhenAll(profilesTask, companionsTask);
                 }
             }
             catch (Exception ex)
@@ -102,8 +104,10 @@ namespace ALGAE.ViewModels
             try
             {
                 var profiles = await _profilesRepository.GetAllByGameIdAsync(Game.GameId);
+                var profileList = profiles.ToList();
+                
                 Profiles.Clear();
-                foreach (var profile in profiles)
+                foreach (var profile in profileList)
                 {
                     Profiles.Add(profile);
                 }
@@ -118,25 +122,24 @@ namespace ALGAE.ViewModels
         {
             try
             {
+                IEnumerable<Companion> companions;
+                
                 // Load companions for this specific game (game-specific + global)
                 if (Game != null)
                 {
-                    var companions = await _companionRepository.GetForGameAsync(Game.GameId);
-                    Companions.Clear();
-                    foreach (var companion in companions)
-                    {
-                        Companions.Add(companion);
-                    }
+                    companions = await _companionRepository.GetForGameAsync(Game.GameId);
                 }
                 else
                 {
                     // Fallback to all companions if no game is set
-                    var companions = await _companionRepository.GetAllAsync();
-                    Companions.Clear();
-                    foreach (var companion in companions)
-                    {
-                        Companions.Add(companion);
-                    }
+                    companions = await _companionRepository.GetAllAsync();
+                }
+                
+                var companionList = companions.ToList();
+                Companions.Clear();
+                foreach (var companion in companionList)
+                {
+                    Companions.Add(companion);
                 }
             }
             catch (Exception ex)

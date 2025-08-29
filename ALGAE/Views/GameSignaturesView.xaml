@@ -64,54 +64,64 @@
 
                 <!-- Action Buttons -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Content="Add New" 
-                            Command="{Binding StartAddNewCommand}"
+                    <Button Command="{Binding StartAddNewCommand}"
                             Style="{StaticResource MaterialDesignRaisedButton}"
                             Margin="4,0">
-                        <Button.Icon>
-                            <materialDesign:PackIcon Kind="Plus"/>
-                        </Button.Icon>
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Plus" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <TextBlock Text="Add New" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button.Content>
                     </Button>
                     
-                    <Button Content="Import File" 
-                            Command="{Binding ImportFromFileCommand}"
+                    <Button Command="{Binding ImportFromFileCommand}"
                             Style="{StaticResource MaterialDesignOutlinedButton}"
                             Margin="4,0"
                             ToolTip="Import signatures from JSON file">
-                        <Button.Icon>
-                            <materialDesign:PackIcon Kind="FileImport"/>
-                        </Button.Icon>
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="FileImport" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <TextBlock Text="Import File" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button.Content>
                     </Button>
                     
-                    <Button Content="Download Latest" 
-                            Command="{Binding DownloadLatestSignaturesCommand}"
+                    <Button Command="{Binding DownloadLatestSignaturesCommand}"
                             Style="{StaticResource MaterialDesignOutlinedButton}"
                             Margin="4,0"
                             IsEnabled="{Binding IsDownloading, Converter={StaticResource InvertBooleanConverter}}"
                             ToolTip="Download latest signatures from GitHub">
-                        <Button.Icon>
-                            <materialDesign:PackIcon Kind="CloudDownload"/>
-                        </Button.Icon>
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CloudDownload" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <TextBlock Text="Download Latest" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button.Content>
                     </Button>
                     
-                    <Button Content="Export" 
-                            Command="{Binding ExportToFileCommand}"
+                    <Button Command="{Binding ExportToFileCommand}"
                             Style="{StaticResource MaterialDesignOutlinedButton}"
                             Margin="4,0"
                             ToolTip="Export signatures to JSON file">
-                        <Button.Icon>
-                            <materialDesign:PackIcon Kind="FileExport"/>
-                        </Button.Icon>
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="FileExport" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <TextBlock Text="Export" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button.Content>
                     </Button>
                     
-                    <Button Content="Refresh" 
-                            Command="{Binding LoadSignaturesCommand}"
+                    <Button Command="{Binding LoadSignaturesCommand}"
                             Style="{StaticResource MaterialDesignOutlinedButton}"
                             Margin="4,0"
                             IsEnabled="{Binding IsLoading, Converter={StaticResource InvertBooleanConverter}}">
-                        <Button.Icon>
-                            <materialDesign:PackIcon Kind="Refresh"/>
-                        </Button.Icon>
+                        <Button.Content>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Refresh" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <TextBlock Text="Refresh" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button.Content>
                     </Button>
                 </StackPanel>
             </Grid>
@@ -415,20 +425,24 @@
                                     HorizontalAlignment="Right" 
                                     Margin="0,16,0,0"
                                     Visibility="{Binding SelectedSignature, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=False}">
-                            <Button Content="Edit" 
-                                    Command="{Binding StartEditCommand}"
+                            <Button Command="{Binding StartEditCommand}"
                                     Style="{StaticResource MaterialDesignRaisedButton}"
                                     Margin="0,0,8,0">
-                                <Button.Icon>
-                                    <materialDesign:PackIcon Kind="Edit"/>
-                                </Button.Icon>
+                                <Button.Content>
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Edit" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                        <TextBlock Text="Edit" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button.Content>
                             </Button>
-                            <Button Content="Delete" 
-                                    Command="{Binding DeleteSignatureCommand}"
+                            <Button Command="{Binding DeleteSignatureCommand}"
                                     Style="{StaticResource MaterialDesignOutlinedButton}">
-                                <Button.Icon>
-                                    <materialDesign:PackIcon Kind="Delete"/>
-                                </Button.Icon>
+                                <Button.Content>
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Delete" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                        <TextBlock Text="Delete" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button.Content>
                             </Button>
                         </StackPanel>
                     </StackPanel>

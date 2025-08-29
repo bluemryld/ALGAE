@@ -137,7 +137,7 @@
                             <Setter Property="Kind" Value="Controller"/>
                           </DataTrigger>
                           <DataTrigger Binding="{Binding Name}" Value="Signatures">
-                            <Setter Property="Kind" Value="FileSignature"/>
+                            <Setter Property="Kind" Value="FileDocument"/>
                           </DataTrigger>
                           <DataTrigger Binding="{Binding Name}" Value="Companions">
                             <Setter Property="Kind" Value="Apps"/>

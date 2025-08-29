@@ -63,8 +63,8 @@ namespace ALGAE.ViewModels
             Games.CollectionChanged += (s, e) => UpdateFilteredGames();
             PropertyChanged += OnPropertyChanged;
             
-            // Load games on startup
-            _ = LoadGamesAsync();
+            // Load games asynchronously without blocking constructor
+            Task.Run(async () => await LoadGamesAsync());
         }
 
         partial void OnSearchTextChanged(string value)
@@ -110,8 +110,11 @@ namespace ALGAE.ViewModels
             {
                 IsLoading = true;
                 var games = await _gameRepository.GetAllAsync();
+                
+                // Clear and add all items at once to minimize UI updates
                 Games.Clear();
-                foreach (var game in games)
+                var gameList = games.ToList();
+                foreach (var game in gameList)
                 {
                     Games.Add(game);
                 }

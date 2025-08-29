@@ -327,7 +327,7 @@ namespace ALGAE.Services
         {
             if (string.IsNullOrWhiteSpace(path)) return false;
             
-            var unsafeChars = new[] { '..', '/', '\\', '|', '<', '>', ':', '*', '?', '"' };
+            var unsafeChars = new[] { "..", "/", "\\", "|", "<", ">", ":", "*", "?", "\"" };
             return unsafeChars.Any(path.Contains);
         }
 
