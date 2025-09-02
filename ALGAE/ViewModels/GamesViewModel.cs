@@ -60,7 +60,7 @@ namespace ALGAE.ViewModels
             _profilesRepository = profilesRepository;
             _companionLaunchService = companionLaunchService;
             _gameLaunchService = gameLaunchService;
-            Games.CollectionChanged += (s, e) => UpdateFilteredGames();
+            Games.CollectionChanged += OnGamesCollectionChanged;
             PropertyChanged += OnPropertyChanged;
             
             // Load games asynchronously without blocking constructor
@@ -81,25 +81,41 @@ namespace ALGAE.ViewModels
             }
         }
 
+        private void OnGamesCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            UpdateFilteredGames();
+        }
+
         private void UpdateFilteredGames()
         {
+            // Clear and repopulate the existing collection instead of creating a new one
+            FilteredGames.Clear();
+            
+            IEnumerable<Game> gamesToShow;
+            
             if (string.IsNullOrWhiteSpace(SearchText))
             {
-                FilteredGames = new ObservableCollection<Game>(Games.OrderBy(g => g.Name));
+                gamesToShow = Games.OrderBy(g => g.Name);
                 IsFiltered = false;
             }
             else
             {
-                var filtered = Games.Where(g => 
+                gamesToShow = Games.Where(g => 
                     g.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
                     (g.Publisher?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (g.Description?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (g.Version?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (g.ShortName.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
                 ).OrderBy(g => g.Name);
-                FilteredGames = new ObservableCollection<Game>(filtered);
                 IsFiltered = true;
             }
+            
+            // Add items to existing collection to avoid recreating it
+            foreach (var game in gamesToShow)
+            {
+                FilteredGames.Add(game);
+            }
+            
             IsEmpty = !FilteredGames.Any();
         }
 
@@ -111,13 +127,27 @@ namespace ALGAE.ViewModels
                 IsLoading = true;
                 var games = await _gameRepository.GetAllAsync();
                 
-                // Clear and add all items at once to minimize UI updates
-                Games.Clear();
-                var gameList = games.ToList();
-                foreach (var game in gameList)
+                // Temporarily disconnect the collection changed event to avoid multiple updates
+                Games.CollectionChanged -= OnGamesCollectionChanged;
+                
+                try
                 {
-                    Games.Add(game);
+                    // Clear and add all items at once to minimize UI updates
+                    Games.Clear();
+                    var gameList = games.ToList();
+                    foreach (var game in gameList)
+                    {
+                        Games.Add(game);
+                    }
                 }
+                finally
+                {
+                    // Reconnect the collection changed event
+                    Games.CollectionChanged += OnGamesCollectionChanged;
+                }
+                
+                // Manually trigger a single update after all games are loaded
+                UpdateFilteredGames();
             }
             catch (Exception ex)
             {

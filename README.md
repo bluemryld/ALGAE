@@ -13,10 +13,24 @@ A modern, Material Design-based WPF application for managing and launching your 
   - Profile-based launching with companion applications
   - Launch history tracking with performance metrics
   - Real-time launcher window with progress monitoring
+- **Automatic Game Detection**:
+  - Comprehensive game signatures database with 500+ games
+  - Intelligent game scanning with configurable search paths
+  - Game verification and duplicate detection
+  - Progress tracking during scan operations
+- **Game Signatures Management**:
+  - Built-in database of popular games with metadata
+  - Custom signature creation and management
+  - Signature-based automatic game identification
+  - Import/export signature functionality
+- **Companion Applications**:
+  - Launch supporting applications alongside games
+  - Companion app management and configuration
+  - Integration with game profiles for automated launching
 - **Multiple Navigation Options**: 
-  - Sidebar navigation with visual menu items
+  - Enhanced sidebar with Signatures and Companions views
   - Top menu bar with keyboard shortcuts
-  - Keyboard shortcuts (`Ctrl+1` for Home, `Ctrl+2` for Games, `Ctrl+3` for Launcher, `F5` for Refresh)
+  - Keyboard shortcuts (`Ctrl+1` for Home, `Ctrl+2` for Games, `Ctrl+3` for Signatures, `Ctrl+4` for Companions, `Ctrl+5` for Launcher, `F5` for Refresh)
 - **Add/Edit Game Dialog**: 
   - Form validation with real-time feedback
   - Auto-generation of short names
@@ -24,7 +38,7 @@ A modern, Material Design-based WPF application for managing and launching your 
   - Keyboard shortcuts for quick actions
 - **Games View**: 
   - Professional card-based game display
-  - Search and filtering capabilities
+  - Advanced search and filtering capabilities
   - Launch, edit, and delete game actions
   - Empty state guidance for new users
   - Loading states with progress indicators
@@ -46,12 +60,12 @@ A modern, Material Design-based WPF application for managing and launching your 
   - Launch statistics and trends
 
 ### Planned Features
-- **Automatic Game Scanning**: Discover installed games automatically
 - **Game Categories & Tags**: Organize games with custom categories
-- **Launch Statistics**: Track play time and launch frequency
 - **Custom Game Icons**: Support for custom game artwork
 - **Import/Export**: Backup and restore your game library
 - **Steam Integration**: Import games from Steam library
+- **Enhanced Analytics**: Advanced play time statistics and trends
+- **Cloud Sync**: Synchronize game library across devices
 
 ## 🛠️ Technology Stack
 
@@ -110,19 +124,32 @@ ALGAE/
 │   │   ├── MainWindow.xaml         # Main application window
 │   │   ├── HomeView.xaml           # Home/dashboard view
 │   │   ├── GamesView.xaml          # Games library view
+│   │   ├── GameSignaturesView.xaml # Game signatures management
+│   │   ├── CompanionsView.xaml     # Companion applications management
 │   │   ├── LauncherView.xaml       # Game launcher/monitor view
 │   │   ├── LauncherWindow.xaml     # Separate launcher window
+│   │   ├── GameScanProgressDialog.xaml # Game scanning progress
+│   │   ├── GameVerificationDialog.xaml # Game verification results
 │   │   └── AddEditGameDialog.xaml  # Add/edit game dialog
 │   ├── ViewModels/                 # MVVM view models
 │   │   ├── MainViewModel.cs        # Main navigation logic
 │   │   ├── HomeViewModel.cs        # Home view logic
 │   │   ├── GamesViewModel.cs       # Games management logic
+│   │   ├── GameSignaturesViewModel.cs # Game signatures management
+│   │   ├── CompanionsViewModel.cs  # Companion applications logic
+│   │   ├── GameScanProgressViewModel.cs # Game scanning progress
+│   │   ├── GameVerificationViewModel.cs # Game verification logic
 │   │   ├── LauncherViewModel.cs    # Game launcher/monitor logic
 │   │   └── GameDetailViewModel.cs  # Game details and profiles
 │   ├── Services/                   # Application services
 │   │   ├── IGameLaunchService.cs   # Game launching interface
 │   │   ├── GameLaunchService.cs    # Game launching implementation
+│   │   ├── IGameDetectionService.cs # Game detection interface
+│   │   ├── GameDetectionService.cs # Automatic game detection
+│   │   ├── IGameSignatureService.cs # Game signatures interface
+│   │   ├── GameSignatureService.cs # Game signature management
 │   │   ├── GameProcessMonitorService.cs # Process monitoring
+│   │   ├── LauncherWindowManager.cs # Launcher window management
 │   │   └── NotificationService.cs  # UI notifications
 │   ├── Converters/                 # XAML value converters
 │   └── App.xaml                    # Application resources and startup
@@ -130,6 +157,8 @@ ALGAE/
 ├── ALGAE.DAL/                      # Data access layer
 │   ├── Models/                     # Entity models
 │   │   ├── Game.cs                 # Game entity
+│   │   ├── GameSignature.cs        # Game signature entity
+│   │   ├── SearchPath.cs           # Search path configuration
 │   │   ├── Profile.cs              # Launch profile entity
 │   │   ├── Companion.cs            # Companion app entity
 │   │   └── LaunchHistory.cs        # Launch tracking entity
@@ -163,15 +192,17 @@ dotnet test ALGAE.Tests --logger console --verbosity normal
 
 ### Test Coverage
 
-✅ **Current Coverage**
+✅ **Current Coverage (24 Tests)**
 - GameLaunchService (validation, file system, launch logic)
 - GamesViewModel (data loading, search, launch commands)
-- Test infrastructure and patterns
+- Test data builders and mock infrastructure
+- Service layer integration testing
 
 📋 **Planned Coverage**
-- Additional ViewModels (GameDetailViewModel, LauncherViewModel)
+- Additional ViewModels (GameDetailViewModel, LauncherViewModel, GameSignaturesViewModel)
 - Repository integration tests
-- Service layer tests (CompanionLaunchService, NotificationService)
+- Game detection and signature services
+- Companion application services
 
 For detailed testing information, see [TESTING.md](TESTING.md).
 
@@ -191,7 +222,9 @@ Logs are stored in:
 
 - `Ctrl+1` - Navigate to Home
 - `Ctrl+2` - Navigate to Games
-- `Ctrl+3` - Navigate to Launcher
+- `Ctrl+3` - Navigate to Signatures
+- `Ctrl+4` - Navigate to Companions  
+- `Ctrl+5` - Navigate to Launcher
 - `F5` - Refresh current view
 - `Ctrl+N` - Add new game (in Games view)
 - `Enter` - Save (in dialogs)

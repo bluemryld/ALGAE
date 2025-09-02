@@ -66,8 +66,13 @@ View (XAML) ←→ ViewModel ←→ Model/Services
 - `HomeViewModel` - Dashboard and summary information
 - `GamesViewModel` - Game library management
 - `GameDetailViewModel` - Individual game details and profiles
+- `GameSignaturesViewModel` - Game signature database management
+- `CompanionsViewModel` - Companion applications management
 - `LauncherViewModel` - Game process monitoring and control
+- `GameScanProgressViewModel` - Game scanning progress tracking
+- `GameVerificationViewModel` - Game verification and duplicate detection
 - `AddEditProfileViewModel` - Profile creation and editing
+- `AddEditCompanionViewModel` - Companion application configuration
 
 **Key MVVM Features:**
 - **Data Binding**: Two-way binding between Views and ViewModels
@@ -123,8 +128,12 @@ services.AddSingleton<INotificationService, NotificationService>();
 Services encapsulate business logic and cross-cutting concerns:
 
 - `INotificationService` - User notifications and feedback
+- `IGameLaunchService` - Game launching and validation
+- `IGameDetectionService` - Automatic game discovery and scanning
+- `IGameSignatureService` - Game signature database management
 - `IGameProcessMonitorService` - Game process monitoring
 - `ICompanionLaunchService` - Companion application management
+- `ILauncherWindowManager` - Launcher window lifecycle management
 - `ILogService` - Application logging
 
 ## Project Structure Detail
@@ -138,15 +147,26 @@ ALGAE/
 ├── Views/
 │   ├── HomeView.xaml              # Dashboard
 │   ├── GamesView.xaml             # Game library grid
+│   ├── GameSignaturesView.xaml    # Game signatures management
+│   ├── CompanionsView.xaml        # Companion applications view
 │   ├── GameDetailView.xaml        # Game details and profiles
 │   ├── LauncherView.xaml          # Process monitoring
+│   ├── LauncherWindow.xaml        # Separate launcher window
 │   ├── AddEditGameDialog.xaml     # Game creation/editing
 │   ├── AddEditProfileDialog.xaml  # Profile creation/editing
-│   └── AddEditCompanionDialog.xaml # Companion configuration
+│   ├── AddEditCompanionDialog.xaml # Companion configuration
+│   ├── GameScanProgressDialog.xaml # Game scanning progress
+│   ├── GameVerificationDialog.xaml # Game verification results
+│   └── SearchPathManagementDialog.xaml # Search paths configuration
 ├── ViewModels/
 │   ├── MainViewModel.cs           # Navigation and global state
 │   ├── HomeViewModel.cs           # Dashboard logic
 │   ├── GamesViewModel.cs          # Game management
+│   ├── GameSignaturesViewModel.cs # Game signatures management
+│   ├── CompanionsViewModel.cs     # Companion applications logic
+│   ├── GameScanProgressViewModel.cs # Game scanning progress
+│   ├── GameVerificationViewModel.cs # Game verification logic
+│   ├── SearchPathManagementViewModel.cs # Search paths configuration
 │   ├── GameDetailViewModel.cs     # Game details and profiles
 │   ├── LauncherViewModel.cs       # Process monitoring
 │   └── AddEdit*ViewModel.cs       # Dialog view models

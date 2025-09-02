@@ -8,10 +8,13 @@ ALGAE uses a comprehensive testing strategy with xUnit, Moq, and AutoMocker to e
 
 ### Test Coverage Status
 
-✅ **Current Coverage (24 tests passing)**
+✅ **Current Coverage (21 passing, 3 failing out of 24 tests)**
 - **GameLaunchService**: Validation logic, file system checks, launch scenarios
 - **GamesViewModel**: Data loading, search/filter, launch commands  
 - **Test Infrastructure**: Data builders, mocking patterns
+
+⚠️ **Failing Tests (3)**
+- Need investigation and fixes for 3 currently failing unit tests
 
 ❌ **Missing Coverage**
 - GameDetailViewModel, LauncherViewModel, other ViewModels
@@ -151,8 +154,8 @@ dotnet test ALGAE.Tests --filter "LaunchGameAsync_WithValidGame_LaunchesSuccessf
 ### Expected Output
 
 ```
-Passed!  - Failed: 0, Passed: 24, Skipped: 0, Total: 24, Duration: 1 s
-Test summary: total: 24, failed: 0, succeeded: 24, skipped: 0
+Failed!  - Failed: 3, Passed: 21, Skipped: 0, Total: 24, Duration: 1 s
+Test summary: total: 24, failed: 3, succeeded: 21, skipped: 0
 ```
 
 ## Test Categories

@@ -1,6 +1,6 @@
 # ALGAE Development TODO
 
-> Last updated: 2025-08-27
+> Last updated: 2025-01-02
 
 ## 🚀 High Priority
 
@@ -29,16 +29,22 @@
 ## 📋 Features
 
 ### Auto-Discovery
+- [x] **Game Scanning** ✅ (2025-01-02)
+  - [x] Scan common installation directories with configurable paths
+  - [x] Smart executable detection using game signatures
+  - [x] Background scanning with progress dialog and cancellation
+  - [x] Game verification and duplicate detection
+  - [x] Comprehensive signature database with 500+ games
+
 - [ ] **Steam Integration**
   - [ ] Read Steam library from registry/config files
   - [ ] Import Steam games with metadata
   - [ ] Handle Steam shortcuts and launch options
   
-- [ ] **Game Scanning**
-  - [ ] Scan common installation directories
+- [ ] **Additional Launcher Support**
   - [ ] Detect popular game launchers (Epic, Origin, GOG)
-  - [ ] Smart executable detection
-  - [ ] Background scanning with progress
+  - [ ] Import games from multiple platforms
+  - [ ] Cross-platform game library unification
 
 ### UI/UX Enhancements
 - [ ] **Visual Improvements**
@@ -87,31 +93,37 @@
   - [x] Auto-clearing validation errors when user types
 
 ### Current Issues
-- [ ] **Performance**
-  - [ ] Large game libraries loading slowly
-  - [ ] Memory usage optimization
-  - [ ] Database query optimization
+- [x] **Performance** ✅ (Mostly resolved)
+  - [x] Large game libraries loading performance improved
+  - [x] Memory usage optimization implemented
+  - [x] Database query optimization completed
 
 - [ ] **UI Issues**
   - [ ] Window sizing and positioning persistence
   - [ ] High DPI scaling issues
   - [ ] Theme switching bugs
 
-- [ ] **Data Issues**
-  - [ ] Database migration handling
-  - [ ] Corrupted game data recovery
-  - [ ] Path validation improvements
+- [ ] **Data Issues**  
+  - [ ] Database migration handling for schema updates
+  - [ ] Corrupted game data recovery mechanisms
+  - [ ] Enhanced path validation and normalization
+
+- [ ] **Testing Issues**
+  - [ ] 3 failing unit tests need investigation and fixes
+  - [ ] Integration test coverage for new features
+  - [ ] Performance testing for large datasets
 
 ## 🔧 Technical Debt
 
-- [x] **Code Quality** ✅ (Partially complete)
-  - [x] Add unit tests for ViewModels (24 tests implemented)
+- [x] **Code Quality** ✅ (Well progressed)
+  - [x] Add unit tests for ViewModels (24 tests implemented, 21 passing)
   - [x] Service testing with mocks and test data builders
+  - [ ] Fix 3 failing unit tests
   - [ ] Integration tests for database operations
   - [ ] Code coverage reporting
   - [ ] Static code analysis setup
-  - [ ] Additional ViewModel tests (GameDetailViewModel, LauncherViewModel)
-  - [ ] Repository unit tests
+  - [ ] Additional ViewModel tests (GameSignaturesViewModel, CompanionsViewModel)
+  - [ ] Repository unit tests for new entities
 
 - [x] **Architecture** ✅ (Mostly complete)
   - [x] Implement proper service layer
@@ -141,17 +153,21 @@
 
 ## 🎯 Milestones
 
-### v1.0.0 - Core Release (75% Complete)
+### v1.0.0 - Core Release (90% Complete)
 - [x] Basic game management (CRUD)
-- [x] Game launching functionality
+- [x] Game launching functionality with profiles
 - [x] Search and filtering (basic)
 - [x] Stable UI with all major views
-- [ ] Polish and bug fixes
+- [x] Automatic game detection and signatures
+- [x] Companion applications support
+- [ ] Final polish and bug fixes
 
-### v1.1.0 - Discovery Release
-- [ ] Auto game scanning
+### v1.1.0 - Discovery Release (90% Complete)
+- [x] Auto game scanning with configurable paths
+- [x] Game signatures database and management
+- [x] Improved game detection with verification
 - [ ] Steam integration
-- [ ] Improved game detection
+- [ ] Multi-platform launcher support
 
 ### v1.2.0 - Organization Release
 - [ ] Categories and tags
@@ -165,28 +181,35 @@
 
 ## 📊 Progress Tracking
 
-### Recent Achievements (2025-08-27)
-- [x] **Consistent Launch Validation Implementation**
-  - [x] Fixed GameDetailViewModel to use same validation as GamesViewModel
-  - [x] Unified launch validation across all views
-  - [x] Proper error handling and edit game dialog integration
-  - [x] GameLaunchService dependency injection in all ViewModels
-- [x] **Profile Dropdown Functionality**
-  - [x] Added profile dropdown buttons to Games view
-  - [x] Dynamic profile loading from repositories
-  - [x] Default launch option + profile-specific options
-  - [x] Proper service access via App.Services property
-- [x] **Comprehensive Unit Testing**
-  - [x] Created 24 unit tests covering critical business logic
-  - [x] GameLaunchService validation and launch testing
-  - [x] GamesViewModel command and data loading testing
-  - [x] Test data builders for consistent test setup
-  - [x] Mock-based testing with AutoMocker
-- [x] **Dependency Injection Improvements**
-  - [x] Added App.Services property for service access
-  - [x] Fixed GameDetailViewModel constructor with IGameLaunchService
-  - [x] Proper service registration in DI container
-  - [x] Service access patterns in Views
+### Recent Achievements (2025-01-02)
+- [x] **Game Signatures System Implementation** ✅
+  - [x] Built comprehensive game signatures database (500+ games)
+  - [x] Game signature management interface with CRUD operations
+  - [x] Signature-based automatic game detection during scanning
+  - [x] Import/export functionality for signature data
+  - [x] Integration with game scanning workflow
+- [x] **Automatic Game Detection** ✅
+  - [x] Configurable search paths management
+  - [x] Background game scanning with progress tracking
+  - [x] Game verification and duplicate detection
+  - [x] Batch import of detected games with user confirmation
+  - [x] Performance-optimized scanning algorithms
+- [x] **Companion Applications System** ✅
+  - [x] Companion app management with CRUD operations
+  - [x] Integration with game profiles for automated launching
+  - [x] Support for launching multiple companion apps per game
+  - [x] Companion app status monitoring
+- [x] **Enhanced UI and Navigation** ✅
+  - [x] Added Signatures view for managing game database
+  - [x] Added Companions view for application management
+  - [x] Updated navigation with new keyboard shortcuts
+  - [x] Progress dialogs for long-running operations
+  - [x] Improved error handling and user feedback
+- [x] **Performance and UI Optimizations** ✅
+  - [x] Games view performance improvements
+  - [x] Fixed UI compilation errors and warnings
+  - [x] Updated NuGet packages to latest versions
+  - [x] Memory usage optimizations for large game libraries
 
 ### Previous Achievements (2025-01-26)
 - [x] **Major Game Launch System Implementation**
@@ -238,4 +261,4 @@
 - Use GitHub project boards for sprint planning
 - Regular review and prioritization sessions
 
-**Next Review:** End of January 2025
+**Next Review:** Mid-January 2025
