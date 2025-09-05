@@ -68,19 +68,23 @@ public class GamesViewModelTests
 
         var viewModel = mocker.CreateInstance<GamesViewModel>();
         
-        // Add test games manually
-        viewModel.Games.Add(new GameTestDataBuilder().WithName("Minecraft").Build());
-        viewModel.Games.Add(new GameTestDataBuilder().WithName("World of Warcraft").Build());
-        viewModel.Games.Add(new GameTestDataBuilder().WithName("Counter Strike").Build());
+        // Add test games manually with unique IDs
+        viewModel.Games.Add(new GameTestDataBuilder().WithId(1).WithName("Minecraft").Build());
+        viewModel.Games.Add(new GameTestDataBuilder().WithId(2).WithName("World of Warcraft").Build());
+        viewModel.Games.Add(new GameTestDataBuilder().WithId(3).WithName("Counter Strike").Build());
 
-        // Act
+        // Act - search for "craft" 
         viewModel.SearchText = "craft";
 
-        // Assert
+        // Assert - Both "Minecraft" and "World of Warcraft" (ShortName: "WorldofWarcraft") match "craft"
         Assert.Equal(2, viewModel.FilteredGames.Count);
         Assert.True(viewModel.IsFiltered);
         Assert.Contains(viewModel.FilteredGames, g => g.Name == "Minecraft");
         Assert.Contains(viewModel.FilteredGames, g => g.Name == "World of Warcraft");
+        
+        // Verify the search logic is working
+        Assert.True(viewModel.HasSearchText);
+        Assert.Equal("craft", viewModel.SearchText);
     }
 
     [Fact]
@@ -94,8 +98,8 @@ public class GamesViewModelTests
 
         var viewModel = mocker.CreateInstance<GamesViewModel>();
         
-        viewModel.Games.Add(new GameTestDataBuilder().WithName("Game 1").Build());
-        viewModel.Games.Add(new GameTestDataBuilder().WithName("Game 2").Build());
+        viewModel.Games.Add(new GameTestDataBuilder().WithId(1).WithName("Game 1").Build());
+        viewModel.Games.Add(new GameTestDataBuilder().WithId(2).WithName("Game 2").Build());
         viewModel.SearchText = "1"; // Apply filter first
 
         // Act
@@ -227,4 +231,5 @@ public class GamesViewModelTests
         mocker.GetMock<ICompanionLaunchService>()
             .Verify(x => x.LaunchCompanionsForProfileAsync(profile.ProfileId), Times.Once);
     }
+
 }
