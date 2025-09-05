@@ -13,7 +13,9 @@ namespace ALGAE.Services
     {
         private readonly ISearchPathRepository _searchPathRepository;
         private readonly IGameSignatureRepository _gameSignatureRepository;
+        private readonly ICompanionSignatureRepository _companionSignatureRepository;
         private readonly IGameRepository _gameRepository;
+        private readonly ICompanionRepository _companionRepository;
         private readonly INotificationService _notificationService;
 
         // Common executable extensions for games
@@ -42,12 +44,16 @@ namespace ALGAE.Services
         public GameDetectionService(
             ISearchPathRepository searchPathRepository,
             IGameSignatureRepository gameSignatureRepository,
+            ICompanionSignatureRepository companionSignatureRepository,
             IGameRepository gameRepository,
+            ICompanionRepository companionRepository,
             INotificationService notificationService)
         {
             _searchPathRepository = searchPathRepository;
             _gameSignatureRepository = gameSignatureRepository;
+            _companionSignatureRepository = companionSignatureRepository;
             _gameRepository = gameRepository;
+            _companionRepository = companionRepository;
             _notificationService = notificationService;
         }
 
@@ -271,6 +277,9 @@ namespace ALGAE.Services
             if (string.IsNullOrEmpty(detectedGame.Name) || detectedGame.ConfidenceScore < 0.3f)
                 return null;
 
+            // Note: Companions are not detected in sync method for performance
+            // They will be detected in the async workflow instead
+
             return detectedGame;
         }
 
@@ -323,6 +332,9 @@ namespace ALGAE.Services
             // Only return if we have enough information
             if (string.IsNullOrEmpty(detectedGame.Name) || detectedGame.ConfidenceScore < 0.3f)
                 return null;
+
+            // Detect companions for this game
+            detectedGame.DetectedCompanions = await DetectCompanionsForGameAsync(detectedGame, directory);
 
             return detectedGame;
         }
@@ -761,6 +773,165 @@ namespace ALGAE.Services
                 GamesFound = gamesFound,
                 CurrentPath = currentPath
             });
+        }
+
+        /// <summary>
+        /// Detects companion applications for a detected game
+        /// </summary>
+        private async Task<List<DetectedCompanion>> DetectCompanionsForGameAsync(DetectedGame detectedGame, string gameDirectory)
+        {
+            var detectedCompanions = new List<DetectedCompanion>();
+            
+            if (detectedGame.MatchedSignature == null)
+                return detectedCompanions;
+
+            try
+            {
+                // Get companion signatures for this game
+                var companionSignatures = await _companionSignatureRepository.GetByGameSignatureIdAsync(detectedGame.MatchedSignature.GameSignatureId);
+                
+                if (!companionSignatures.Any())
+                    return detectedCompanions;
+
+                // Get existing companions to check for duplicates
+                var existingCompanions = await _companionRepository.GetAllAsync();
+                var existingPaths = new HashSet<string>(existingCompanions.Select(c => c.PathOrURL.ToLowerInvariant()));
+
+                // Search for companions in the game directory and common locations
+                var searchPaths = new List<string> { gameDirectory };
+                
+                // Add parent directory to search (common for companion apps)
+                var parentDir = Directory.GetParent(gameDirectory)?.FullName;
+                if (!string.IsNullOrEmpty(parentDir))
+                    searchPaths.Add(parentDir);
+
+                foreach (var searchPath in searchPaths.Where(Directory.Exists))
+                {
+                    var executables = Directory.GetFiles(searchPath, "*.exe", SearchOption.TopDirectoryOnly)
+                                               .Where(f => !ShouldExcludeFile(f));
+
+                    foreach (var executablePath in executables)
+                    {
+                        foreach (var signature in companionSignatures)
+                        {
+                            var detectedCompanion = await TryMatchCompanionSignature(executablePath, signature, existingPaths);
+                            if (detectedCompanion != null)
+                            {
+                                detectedCompanions.Add(detectedCompanion);
+                                break; // Don't match the same executable to multiple signatures
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error detecting companions for game {detectedGame.Name}: {ex.Message}");
+            }
+
+            return detectedCompanions;
+        }
+
+        /// <summary>
+        /// Attempts to match an executable to a companion signature
+        /// </summary>
+        private async Task<DetectedCompanion?> TryMatchCompanionSignature(string executablePath, CompanionSignature signature, HashSet<string> existingPaths)
+        {
+            var fileName = Path.GetFileName(executablePath);
+            
+            // Check executable name match
+            if (!string.Equals(fileName, signature.ExecutableName, StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            try
+            {
+                var fileInfo = FileVersionInfo.GetVersionInfo(executablePath);
+                float confidence = CalculateCompanionSignatureMatchConfidence(signature, fileName, fileInfo);
+                
+                if (confidence < 0.5f)
+                    return null;
+
+                var detectedCompanion = new DetectedCompanion
+                {
+                    Name = signature.Name,
+                    Description = signature.Description,
+                    Publisher = signature.Publisher,
+                    Version = signature.Version,
+                    ExecutablePath = executablePath,
+                    CompanionArgs = signature.CompanionArgs,
+                    MatchedSignature = signature,
+                    ConfidenceScore = confidence,
+                    AlreadyExists = existingPaths.Contains(executablePath.ToLowerInvariant()),
+                    Type = "Application"
+                };
+
+                // Add detection reasons
+                detectedCompanion.DetectionReasons.Add($"Matched companion signature: {signature.Name}");
+                detectedCompanion.DetectionReasons.Add($"Executable name: {fileName}");
+                
+                if (fileInfo.FileDescription != null && signature.MatchName && 
+                    fileInfo.FileDescription.Contains(signature.MetaName ?? signature.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    detectedCompanion.DetectionReasons.Add($"File description match: {fileInfo.FileDescription}");
+                    confidence += 0.2f;
+                }
+
+                if (fileInfo.CompanyName != null && signature.MatchPublisher &&
+                    fileInfo.CompanyName.Contains(signature.Publisher ?? "", StringComparison.OrdinalIgnoreCase))
+                {
+                    detectedCompanion.DetectionReasons.Add($"Publisher match: {fileInfo.CompanyName}");
+                    confidence += 0.1f;
+                }
+
+                detectedCompanion.ConfidenceScore = Math.Min(confidence, 1.0f);
+                
+                return detectedCompanion;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error analyzing companion executable {executablePath}: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Calculates confidence score for companion signature match
+        /// </summary>
+        private float CalculateCompanionSignatureMatchConfidence(CompanionSignature signature, string fileName, FileVersionInfo? fileInfo)
+        {
+            float confidence = 0f;
+
+            // Exact executable name match
+            if (string.Equals(fileName, signature.ExecutableName, StringComparison.OrdinalIgnoreCase))
+            {
+                confidence += 0.6f; // Base confidence for name match
+            }
+
+            if (fileInfo != null)
+            {
+                // File description match
+                if (signature.MatchName && !string.IsNullOrEmpty(signature.MetaName) && 
+                    fileInfo.FileDescription?.Contains(signature.MetaName, StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    confidence += 0.3f;
+                }
+
+                // Company/Publisher match  
+                if (signature.MatchPublisher && !string.IsNullOrEmpty(signature.Publisher) &&
+                    fileInfo.CompanyName?.Contains(signature.Publisher, StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    confidence += 0.2f;
+                }
+
+                // Version match
+                if (signature.MatchVersion && !string.IsNullOrEmpty(signature.Version) &&
+                    fileInfo.ProductVersion?.Contains(signature.Version, StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    confidence += 0.1f;
+                }
+            }
+
+            return Math.Min(confidence, 1.0f);
         }
     }
 }

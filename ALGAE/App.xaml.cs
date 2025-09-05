@@ -164,6 +164,7 @@ public partial class App : Application
             services.AddTransient<IProfilesRepository, ProfilesRepository>();
             services.AddTransient<ICompanionRepository, CompanionRepository>();
             services.AddTransient<ICompanionProfileRepository, CompanionProfileRepository>();
+            services.AddTransient<ICompanionSignatureRepository, CompanionSignatureRepository>();
             services.AddTransient<ISearchPathRepository, SearchPathRepository>();
             services.AddTransient<IGameSignatureRepository, GameSignatureRepository>();
 

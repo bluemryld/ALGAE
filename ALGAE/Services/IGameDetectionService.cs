@@ -35,6 +35,25 @@ namespace ALGAE.Services
         public float ConfidenceScore { get; set; }
         public List<string> DetectionReasons { get; set; } = new();
         public bool AlreadyExists { get; set; }
+        public List<DetectedCompanion> DetectedCompanions { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Represents a companion application detected during scanning
+    /// </summary>
+    public class DetectedCompanion
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public string? Publisher { get; set; }
+        public string? Version { get; set; }
+        public string ExecutablePath { get; set; } = string.Empty;
+        public string? CompanionArgs { get; set; }
+        public CompanionSignature? MatchedSignature { get; set; }
+        public float ConfidenceScore { get; set; }
+        public List<string> DetectionReasons { get; set; } = new();
+        public bool AlreadyExists { get; set; }
+        public string Type { get; set; } = "Application"; // Application, Website, Document, etc.
     }
 
     /// <summary>
