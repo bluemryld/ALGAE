@@ -21,11 +21,11 @@ namespace ALGAE.ViewModels
     {
         private readonly IGameProcessMonitorService _processMonitor;
         private readonly INotificationService _notificationService;
-        private readonly IGameLaunchService _gameLaunchService;
-        private readonly IProfilesRepository _profilesRepository;
-        private readonly ICompanionRepository _companionRepository;
-        private readonly ICompanionProfileRepository _companionProfileRepository;
-        private readonly ICompanionLaunchService _companionLaunchService;
+        private readonly IGameLaunchService? _gameLaunchService;
+        private readonly IProfilesRepository? _profilesRepository;
+        private readonly ICompanionRepository? _companionRepository;
+        private readonly ICompanionProfileRepository? _companionProfileRepository;
+        private readonly ICompanionLaunchService? _companionLaunchService;
         private readonly Dispatcher _dispatcher;
         private Game? _currentGame;
         private Profile? _currentProfile;

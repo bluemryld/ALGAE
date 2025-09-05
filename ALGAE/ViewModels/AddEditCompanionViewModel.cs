@@ -173,7 +173,7 @@ namespace ALGAE.ViewModels
         }
 
         [RelayCommand]
-        private async Task BrowseForFileAsync()
+        private void BrowseForFile()
         {
             try
             {

@@ -339,7 +339,7 @@ namespace ALGAE.Services
             return detectedGame;
         }
 
-        private async Task<(GameSignature signature, float confidence)?> FindBestGameSignatureMatch(
+        private async Task<(GameSignature? signature, float confidence)?> FindBestGameSignatureMatch(
             string fileName, FileVersionInfo? fileInfo, List<GameSignature> gameSignatures)
         {
             var bestMatch = (signature: (GameSignature?)null, confidence: 0f);

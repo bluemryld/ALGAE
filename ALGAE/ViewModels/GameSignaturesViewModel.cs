@@ -79,8 +79,8 @@ namespace ALGAE.ViewModels
         {
             if (e.PropertyName == nameof(SearchText))
             {
-                _signaturesView.Refresh();
-                FilteredSignatures = _signaturesView.Cast<GameSignature>().Count();
+                SignaturesView.Refresh();
+                FilteredSignatures = SignaturesView.Cast<GameSignature>().Count();
             }
         }
         
@@ -353,7 +353,7 @@ namespace ALGAE.ViewModels
                     // Export all signatures or just filtered ones?
                     var signaturesToExport = string.IsNullOrWhiteSpace(SearchText) 
                         ? Signatures.ToList()
-                        : _signaturesView.Cast<GameSignature>().ToList();
+                        : SignaturesView.Cast<GameSignature>().ToList();
                     
                     var json = JsonSerializer.Serialize(signaturesToExport, options);
                     await File.WriteAllTextAsync(saveFileDialog.FileName, json);

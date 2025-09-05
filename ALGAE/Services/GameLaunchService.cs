@@ -26,19 +26,19 @@ namespace ALGAE.Services
             _processMonitorService.GameStopped += OnGameStopped;
         }
 
-        public async Task<GameValidationResult> ValidateGameAsync(Game game)
+        public Task<GameValidationResult> ValidateGameAsync(Game game)
         {
             var warnings = new List<string>();
 
             // Check if game object has required data
             if (string.IsNullOrWhiteSpace(game.InstallPath))
             {
-                return GameValidationResult.Failure("Game install path is not specified.");
+                return Task.FromResult(GameValidationResult.Failure("Game install path is not specified."));
             }
 
             if (string.IsNullOrWhiteSpace(game.ExecutableName))
             {
-                return GameValidationResult.Failure("Game executable name is not specified.");
+                return Task.FromResult(GameValidationResult.Failure("Game executable name is not specified."));
             }
 
             // Get full executable path
@@ -47,7 +47,7 @@ namespace ALGAE.Services
             // Check if executable file exists
             if (!File.Exists(executablePath))
             {
-                return GameValidationResult.Failure($"Game executable not found at: {executablePath}");
+                return Task.FromResult(GameValidationResult.Failure($"Game executable not found at: {executablePath}"));
             }
 
             // Check if install path exists
@@ -76,7 +76,7 @@ namespace ALGAE.Services
                 warnings.Add($"Another game '{_processMonitorService.RunningGame?.Name}' is currently running.");
             }
 
-            return GameValidationResult.Success(warnings);
+            return Task.FromResult(GameValidationResult.Success(warnings));
         }
 
         public async Task<GameLaunchResult> LaunchGameAsync(Game game)

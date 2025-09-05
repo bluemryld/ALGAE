@@ -10,7 +10,7 @@ namespace ALGAE.Views
     /// </summary>
     public partial class LauncherWindow : Window
     {
-        public Game AssociatedGame { get; }
+        public Game? AssociatedGame { get; }
 
         public LauncherWindow()
         {

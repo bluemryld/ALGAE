@@ -16,7 +16,7 @@ namespace ALGAE.Views
             InitializeComponent();
         }
 
-        private async void SaveButton_Click(object sender, RoutedEventArgs e)
+        private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             var viewModel = DataContext as AddEditProfileViewModel;
             if (viewModel != null && !string.IsNullOrWhiteSpace(viewModel.ProfileName))

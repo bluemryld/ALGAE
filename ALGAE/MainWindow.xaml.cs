@@ -10,7 +10,7 @@ namespace ALGAE;
 /// </summary>
 public partial class MainWindow
 {
-    public ISnackbarMessageQueue MessageQueue => MainSnackbar.MessageQueue;
+    public ISnackbarMessageQueue MessageQueue => MainSnackbar?.MessageQueue ?? new SnackbarMessageQueue();
     
     public MainWindow(MainViewModel viewModel)
     {
