@@ -36,8 +36,13 @@ public partial class App : Application
             using IHost host = CreateHostBuilder(args).Build();
             await host.StartAsync().ConfigureAwait(true);
 
-            // Initialize database after host startup
-            var initializer = host.Services.GetRequiredService<DatabaseInitializer>();
+            // Initialize database management and get the active database
+            var databaseService = host.Services.GetRequiredService<ALGAE.Services.IDatabaseManagementService>();
+            var activeDatabasePath = await databaseService.GetActiveDatabasePathAsync();
+            
+            // Initialize the database with the selected path
+            var context = new DatabaseContext(activeDatabasePath);
+            var initializer = new DatabaseInitializer(context);
             initializer.Initialize();
 
         App app = new();
@@ -45,6 +50,27 @@ public partial class App : Application
         app.InitializeComponent();
         app.MainWindow = host.Services.GetRequiredService<MainWindow>();
         app.MainWindow.Visibility = Visibility.Visible;
+        
+        // After the main window is shown, check if signatures are needed
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(1000); // Give UI time to load
+            var currentDb = await databaseService.GetCurrentDatabaseAsync();
+            if (currentDb != null && currentDb.Exists)
+            {
+                var hasSignatures = await databaseService.HasSignaturesAsync(currentDb.FilePath);
+                var settings = await databaseService.LoadSettingsAsync();
+                
+                if (!hasSignatures && settings.General.AutoDownloadSignatures)
+                {
+                    // Show signature download prompt on UI thread
+                    app.Dispatcher.Invoke(async () =>
+                    {
+                        await ShowSignatureDownloadPromptAsync(currentDb.Name, host.Services);
+                    });
+                }
+            }
+        });
         
         // Set up proper shutdown handling
         app.Exit += (sender, e) => {
@@ -104,6 +130,8 @@ public partial class App : Application
             services.AddSingleton<LauncherWindow>(provider => 
                 new LauncherWindow(provider.GetRequiredService<ALGAE.ViewModels.LauncherViewModel>()));
             services.AddSingleton<ALGAE.ViewModels.MainViewModel>();
+            services.AddTransient<ALGAE.ViewModels.LogViewerViewModel>();
+            services.AddTransient<ALGAE.Views.LogViewerWindow>();
             services.AddTransient<ALGAE.ViewModels.GamesViewModel>(provider => 
                 new ALGAE.ViewModels.GamesViewModel(
                     provider.GetRequiredService<IGameRepository>(),
@@ -143,8 +171,21 @@ public partial class App : Application
             services.AddTransient<ALGAE.ViewModels.CompanionsViewModel>();
             services.AddTransient<ALGAE.ViewModels.AddEditCompanionViewModel>();
             
+            // Register settings ViewModels
+            services.AddTransient<ALGAE.ViewModels.SettingsViewModel>();
+            
+            // Register signature management ViewModels
+            services.AddTransient<ALGAE.ViewModels.GameSignaturesViewModel>(provider =>
+                new ALGAE.ViewModels.GameSignaturesViewModel(
+                    provider.GetRequiredService<ALGAE.DAL.Repositories.IGameSignatureRepository>(),
+                    provider.GetRequiredService<ALGAE.Services.IGameSignatureService>()
+                ));
+            
             // Register notification service
             services.AddSingleton<ALGAE.Services.INotificationService, ALGAE.Services.NotificationService>();
+            
+            // Register logging service
+            services.AddSingleton<ALGAE.Services.ILoggingService, ALGAE.Services.LoggingService>();
             
             // Register game process monitoring service
             services.AddSingleton<ALGAE.Services.IGameProcessMonitorService, ALGAE.Services.GameProcessMonitorService>();
@@ -157,6 +198,12 @@ public partial class App : Application
 
             // Register game detection service
             services.AddTransient<ALGAE.Services.IGameDetectionService, ALGAE.Services.GameDetectionService>();
+            
+            // Register database management service
+            services.AddSingleton<ALGAE.Services.IDatabaseManagementService, ALGAE.Services.DatabaseManagementService>();
+            
+            // Register game signature service
+            services.AddTransient<ALGAE.Services.IGameSignatureService, ALGAE.Services.GameSignatureService>();
             
             // Register repositories
             services.AddTransient<IGameRepository, GameRepository>();
@@ -178,7 +225,11 @@ public partial class App : Application
                 Dispatcher dispatcher = provider.GetRequiredService<Dispatcher>();
                 return new SnackbarMessageQueue(TimeSpan.FromSeconds(3.0), dispatcher);
             });
-            services.AddSingleton(_ => new DatabaseContext(GetDatabasePath()));
+            services.AddSingleton<DatabaseContext>(provider =>
+            {
+                // This will be updated during startup to use the proper database
+                return new DatabaseContext(GetDatabasePath());
+            });
             services.AddTransient<DatabaseInitializer>();
         });
 
@@ -291,6 +342,63 @@ public partial class App : Application
         System.Diagnostics.Debug.WriteLine($"  Final Decision: {(isDevelopment ? "DEVELOPMENT" : "PRODUCTION")}");
         
         return isDevelopment;
+    }
+    
+    private static async Task ShowSignatureDownloadPromptAsync(string databaseName, IServiceProvider services)
+    {
+        try
+        {
+            var dialog = new ALGAE.Views.SignatureDownloadPromptDialog(databaseName);
+            var result = dialog.ShowDialog();
+            
+            if (result == true && dialog.Result == ALGAE.Views.SignatureDownloadPromptDialogResult.Download)
+            {
+                // Download signatures
+                var gameSignatureService = services.GetService<ALGAE.Services.IGameSignatureService>();
+                if (gameSignatureService != null)
+                {
+                    try
+                    {
+                        var signatures = await gameSignatureService.DownloadLatestSignaturesAsync();
+                        var gameSignatureRepository = services.GetRequiredService<ALGAE.DAL.Repositories.IGameSignatureRepository>();
+                        
+                        foreach (var signature in signatures)
+                        {
+                            signature.GameSignatureId = 0; // Reset ID for new import
+                            await gameSignatureRepository.AddAsync(signature);
+                        }
+                        
+                        System.Diagnostics.Debug.WriteLine($"Successfully downloaded and imported {signatures.Count()} signatures");
+                        MessageBox.Show($"Successfully downloaded and imported {signatures.Count()} game signatures!", 
+                            "Download Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error downloading signatures: {ex.Message}");
+                        MessageBox.Show($"Error downloading signatures: {ex.Message}", "Download Error", 
+                            MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+            }
+            
+            // Update settings if needed
+            if (dialog.RememberChoice || dialog.AutoDownloadForNewDatabases)
+            {
+                var databaseService = services.GetRequiredService<ALGAE.Services.IDatabaseManagementService>();
+                var settings = await databaseService.LoadSettingsAsync();
+                
+                if (dialog.RememberChoice)
+                {
+                    settings.General.AutoDownloadSignatures = dialog.Result == ALGAE.Views.SignatureDownloadPromptDialogResult.Download;
+                }
+                
+                await databaseService.SaveSettingsAsync(settings);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error showing signature download prompt: {ex.Message}");
+        }
     }
     
     [Obsolete("Use IsDevelopmentEnvironment() instead for better detection")]

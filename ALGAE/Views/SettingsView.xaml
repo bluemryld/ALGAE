@@ -1,0 +1,263 @@
+<UserControl x:Class="ALGAE.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="800" d:DesignWidth="900">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="Settings" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
+            <TextBlock Text="Configure application preferences and manage databases" 
+                      Foreground="Gray" FontSize="14"/>
+        </StackPanel>
+        
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Loading Indicator -->
+                <ProgressBar IsIndeterminate="True" Height="4" Margin="0,0,0,10"
+                           Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                
+                <!-- Database Management Section -->
+                <GroupBox Header="Database Management" Margin="0,0,0,20" Padding="15">
+                    <StackPanel>
+                        <!-- Current Database Selection -->
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="Current Database:" 
+                                     VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                            
+                            <ComboBox Grid.Column="1" 
+                                    ItemsSource="{Binding Databases}" 
+                                    SelectedItem="{Binding SelectedDatabase}"
+                                    DisplayMemberPath="DisplayName"
+                                    VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            
+                            <Button Grid.Column="2" Content="Switch" 
+                                  Command="{Binding SwitchToSelectedDatabaseCommand}"
+                                  IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
+                                  VerticalAlignment="Center" Margin="0,0,5,0" Padding="10,5"/>
+                            
+                            <Button Grid.Column="3" Content="Refresh" 
+                                  Command="{Binding RefreshDatabasesCommand}"
+                                  IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
+                                  VerticalAlignment="Center" Padding="10,5"/>
+                        </Grid>
+                        
+                        <!-- Database List -->
+                        <TextBlock Text="Available Databases:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                        <DataGrid ItemsSource="{Binding Databases}" 
+                                AutoGenerateColumns="False" 
+                                IsReadOnly="True"
+                                CanUserReorderColumns="True"
+                                CanUserSortColumns="True"
+                                GridLinesVisibility="Horizontal"
+                                AlternatingRowBackground="LightGray"
+                                Margin="0,0,0,15"
+                                MinHeight="200">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="150"/>
+                                <DataGridTextColumn Header="Type" Width="80">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource DatabaseTypeConverter}">
+                                            <Binding Path="IsDebugDatabase"/>
+                                            <Binding Path="IsDefault"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Size" Binding="{Binding SizeFormatted}" Width="80"/>
+                                <DataGridTextColumn Header="Games" Binding="{Binding GameCount}" Width="60"/>
+                                <DataGridTextColumn Header="Companions" Binding="{Binding CompanionCount}" Width="90"/>
+                                <DataGridCheckBoxColumn Header="Has Signatures" Binding="{Binding HasSignatures}" Width="100"/>
+                                <DataGridTextColumn Header="Last Used" Binding="{Binding LastUsedDate, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Width="130"/>
+                                <DataGridTextColumn Header="Path" Binding="{Binding FilePath}" Width="*"/>
+                                <DataGridTemplateColumn Header="Actions" Width="180">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Content="Set Default" 
+                                                      Command="{Binding DataContext.SetAsDefaultDatabaseCommand, 
+                                                               RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      CommandParameter="{Binding}"
+                                                      IsEnabled="{Binding IsDefault, Converter={StaticResource InverseBooleanConverter}}"
+                                                      Margin="2" Padding="5,2" FontSize="10"/>
+                                                <Button Content="Clear" 
+                                                      Command="{Binding DataContext.ClearDatabaseCommand, 
+                                                               RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      CommandParameter="{Binding}"
+                                                      IsEnabled="{Binding Exists}"
+                                                      Margin="2" Padding="5,2" FontSize="10" 
+                                                      Background="Orange" Foreground="White"/>
+                                                <Button Content="Delete" 
+                                                      Command="{Binding DataContext.DeleteDatabaseCommand, 
+                                                               RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      CommandParameter="{Binding}"
+                                                      Margin="2" Padding="5,2" FontSize="10" 
+                                                      Background="Red" Foreground="White"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        
+                        <!-- Database Actions -->
+                        <Button Content="Create New Database" 
+                              Command="{Binding CreateNewDatabaseCommand}"
+                              IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
+                              HorizontalAlignment="Left" Padding="15,8" 
+                              Background="Green" Foreground="White" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </GroupBox>
+                
+                <!-- Application Settings Section -->
+                <GroupBox Header="Application Settings" Margin="0,0,0,20" Padding="15">
+                    <StackPanel>
+                        <CheckBox Content="Auto-download signatures for empty databases" 
+                                IsChecked="{Binding AutoDownloadSignatures}" 
+                                Margin="0,0,0,10"/>
+                        
+                        <CheckBox Content="Show database switch confirmation prompt" 
+                                IsChecked="{Binding ShowDatabaseSwitchPrompt}" 
+                                Margin="0,0,0,15"/>
+                        
+                        <!-- Theme Selection -->
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="Theme:" 
+                                     VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                            
+                            <ComboBox Grid.Column="1" 
+                                    SelectedItem="{Binding Theme}"
+                                    HorizontalAlignment="Left" Width="150">
+                                <ComboBoxItem Content="Auto"/>
+                                <ComboBoxItem Content="Light"/>
+                                <ComboBoxItem Content="Dark"/>
+                            </ComboBox>
+                        </Grid>
+                        
+                        <Button Content="Save Settings" 
+                              Command="{Binding SaveSettingsCommand}"
+                              IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
+                              HorizontalAlignment="Left" Padding="15,8" 
+                              Background="Blue" Foreground="White" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </GroupBox>
+                
+                <!-- Logging Settings Section -->
+                <GroupBox Header="Logging Settings" Margin="0,0,0,20" Padding="15">
+                    <StackPanel>
+                        <!-- Log Level Selection -->
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="Log Level:" 
+                                     VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                            
+                            <ComboBox Grid.Column="1" 
+                                    SelectedItem="{Binding SelectedLogLevel}"
+                                    ItemsSource="{Binding LogLevels}"
+                                    HorizontalAlignment="Left" Width="150"/>
+                                    
+                            <Button Grid.Column="2" Content="Open Log Viewer" 
+                                  Command="{Binding OpenLogViewerCommand}"
+                                  Margin="10,0,0,0" Padding="10,5" 
+                                  Background="Purple" Foreground="White"/>
+                        </Grid>
+                        
+                        <CheckBox Content="Enable file logging" 
+                                IsChecked="{Binding EnableFileLogging}" 
+                                Margin="0,0,0,10"/>
+                        
+                        <CheckBox Content="Enable log rotation" 
+                                IsChecked="{Binding EnableLogRotation}" 
+                                Margin="0,0,0,10"/>
+                        
+                        <CheckBox Content="Show debug messages in UI" 
+                                IsChecked="{Binding ShowDebugMessages}" 
+                                Margin="0,0,0,15"/>
+                        
+                        <!-- Log File Settings -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="Max Log File Size (MB):" 
+                                     VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBox Grid.Column="1" Text="{Binding MaxLogFileSizeMB}" 
+                                   Width="60" HorizontalAlignment="Left"/>
+                        </Grid>
+                        
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="Max Log Files:" 
+                                     VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBox Grid.Column="1" Text="{Binding MaxLogFiles}" 
+                                   Width="60" HorizontalAlignment="Left"/>
+                        </Grid>
+                        
+                        <Button Content="Clear All Logs" 
+                              Command="{Binding ClearLogsCommand}"
+                              HorizontalAlignment="Left" Padding="15,8" 
+                              Background="Red" Foreground="White" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </GroupBox>
+                
+                <!-- Database Information Section -->
+                <GroupBox Header="Current Database Information" Padding="15">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,10" DataContext="{Binding SelectedDatabase}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Grid.Column="0" Margin="0,0,20,0">
+                                <TextBlock Text="Database Details" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <TextBlock Text="{Binding Name, StringFormat='Name: {0}'}" Margin="0,0,0,3"/>
+                                <TextBlock Text="{Binding SizeFormatted, StringFormat='Size: {0}'}" Margin="0,0,0,3"/>
+                                <TextBlock Text="{Binding LastUsedDate, StringFormat='Last Used: {0:yyyy-MM-dd HH:mm}'}" Margin="0,0,0,3"/>
+                                <TextBlock Text="{Binding FilePath, StringFormat='Path: {0}'}" TextWrapping="Wrap" Margin="0,0,0,3"/>
+                            </StackPanel>
+                            
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Content Statistics" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <TextBlock Text="{Binding GameCount, StringFormat='Games: {0}'}" Margin="0,0,0,3"/>
+                                <TextBlock Text="{Binding CompanionCount, StringFormat='Companions: {0}'}" Margin="0,0,0,3"/>
+                                <TextBlock Text="{Binding HasSignatures, Converter={StaticResource BooleanToYesNoConverter}, StringFormat='Has Signatures: {0}'}" Margin="0,0,0,3"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

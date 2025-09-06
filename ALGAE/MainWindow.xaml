@@ -18,11 +18,15 @@
     <KeyBinding Key="NumPad1" Modifiers="Ctrl" Command="{Binding NavigateToHomeCommand}"/>
     <KeyBinding Key="NumPad2" Modifiers="Ctrl" Command="{Binding NavigateToGamesCommand}"/>
     <KeyBinding Key="NumPad3" Modifiers="Ctrl" Command="{Binding NavigateToCompanionsCommand}"/>
-    <KeyBinding Key="NumPad4" Modifiers="Ctrl" Command="{Binding NavigateToLauncherCommand}"/>
+    <KeyBinding Key="NumPad4" Modifiers="Ctrl" Command="{Binding NavigateToSignaturesCommand}"/>
+    <KeyBinding Key="NumPad5" Modifiers="Ctrl" Command="{Binding NavigateToSettingsCommand}"/>
+    <KeyBinding Key="NumPad6" Modifiers="Ctrl" Command="{Binding NavigateToLauncherCommand}"/>
     <KeyBinding Key="D1" Modifiers="Ctrl" Command="{Binding NavigateToHomeCommand}"/>
     <KeyBinding Key="D2" Modifiers="Ctrl" Command="{Binding NavigateToGamesCommand}"/>
     <KeyBinding Key="D3" Modifiers="Ctrl" Command="{Binding NavigateToCompanionsCommand}"/>
-    <KeyBinding Key="D4" Modifiers="Ctrl" Command="{Binding NavigateToLauncherCommand}"/>
+    <KeyBinding Key="D4" Modifiers="Ctrl" Command="{Binding NavigateToSignaturesCommand}"/>
+    <KeyBinding Key="D5" Modifiers="Ctrl" Command="{Binding NavigateToSettingsCommand}"/>
+    <KeyBinding Key="D6" Modifiers="Ctrl" Command="{Binding NavigateToLauncherCommand}"/>
     <KeyBinding Key="F5" Command="{Binding RefreshCurrentViewCommand}"/>
   </Window.InputBindings>
   
@@ -68,9 +72,23 @@
             <materialDesign:PackIcon Kind="Apps" Width="16" Height="16"/>
           </MenuItem.Icon>
         </MenuItem>
+        <MenuItem Header="_Signatures" 
+                  Command="{Binding NavigateToSignaturesCommand}"
+                  InputGestureText="Ctrl+4">
+          <MenuItem.Icon>
+            <materialDesign:PackIcon Kind="FileKey" Width="16" Height="16"/>
+          </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Header="Se_ttings" 
+                  Command="{Binding NavigateToSettingsCommand}"
+                  InputGestureText="Ctrl+5">
+          <MenuItem.Icon>
+            <materialDesign:PackIcon Kind="Settings" Width="16" Height="16"/>
+          </MenuItem.Icon>
+        </MenuItem>
         <MenuItem Header="_Launcher" 
                   Command="{Binding NavigateToLauncherCommand}"
-                  InputGestureText="Ctrl+4">
+                  InputGestureText="Ctrl+6">
           <MenuItem.Icon>
             <materialDesign:PackIcon Kind="RocketLaunch" Width="16" Height="16"/>
           </MenuItem.Icon>

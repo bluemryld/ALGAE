@@ -1,0 +1,63 @@
+<Window x:Class="ALGAE.Views.SignatureDownloadPromptDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Download Game Signatures" Height="300" Width="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Icon and Title -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
+            <TextBlock Text="🎮" FontSize="24" Margin="0,0,10,0" VerticalAlignment="Center"/>
+            <TextBlock Text="No Game Signatures Found" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+        </StackPanel>
+        
+        <!-- Database Info -->
+        <TextBlock Grid.Row="1" Text="{Binding DatabaseMessage}" TextWrapping="Wrap" 
+                   Margin="0,0,0,15" Foreground="Gray"/>
+        
+        <!-- Main Message -->
+        <TextBlock Grid.Row="2" TextWrapping="Wrap" Margin="0,0,0,20">
+            <TextBlock.Text>
+Your database doesn't contain any game signatures, which are needed to automatically detect and manage games. 
+
+Would you like to download the latest signatures from the online repository? This will help ALGAE recognize your installed games automatically.
+            </TextBlock.Text>
+        </TextBlock>
+        
+        <!-- Options -->
+        <StackPanel Grid.Row="3" Margin="0,0,0,20">
+            <CheckBox x:Name="RememberChoiceCheckBox" Content="Remember my choice and don't ask again" 
+                     IsChecked="{Binding RememberChoice}" Margin="0,0,0,10"/>
+            <CheckBox x:Name="AutoDownloadCheckBox" Content="Automatically download signatures for new databases" 
+                     IsChecked="{Binding AutoDownloadForNewDatabases}"/>
+        </StackPanel>
+        
+        <!-- Buttons -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Download Now" 
+                  Click="DownloadButton_Click"
+                  IsDefault="True"
+                  Background="Green" Foreground="White"
+                  Padding="20,8" Margin="0,0,10,0"/>
+            
+            <Button Content="Skip"
+                  Click="SkipButton_Click"
+                  Padding="20,8" Margin="0,0,10,0"/>
+            
+            <Button Content="Go to Settings"
+                  Click="SettingsButton_Click"
+                  Padding="20,8"/>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -16,6 +16,8 @@ namespace ALGAE.Services
         private readonly ICompanionSignatureRepository _companionSignatureRepository;
         private readonly IGameRepository _gameRepository;
         private readonly ICompanionRepository _companionRepository;
+        private readonly IProfilesRepository _profilesRepository;
+        private readonly ICompanionProfileRepository _companionProfileRepository;
         private readonly INotificationService _notificationService;
 
         // Common executable extensions for games
@@ -47,6 +49,8 @@ namespace ALGAE.Services
             ICompanionSignatureRepository companionSignatureRepository,
             IGameRepository gameRepository,
             ICompanionRepository companionRepository,
+            IProfilesRepository profilesRepository,
+            ICompanionProfileRepository companionProfileRepository,
             INotificationService notificationService)
         {
             _searchPathRepository = searchPathRepository;
@@ -54,6 +58,8 @@ namespace ALGAE.Services
             _companionSignatureRepository = companionSignatureRepository;
             _gameRepository = gameRepository;
             _companionRepository = companionRepository;
+            _profilesRepository = profilesRepository;
+            _companionProfileRepository = companionProfileRepository;
             _notificationService = notificationService;
         }
 
@@ -736,6 +742,7 @@ namespace ALGAE.Services
             {
                 try
                 {
+                    // 1. Create and add the game
                     var game = new Game
                     {
                         Name = detectedGame.Name,
@@ -752,7 +759,76 @@ namespace ALGAE.Services
                     };
 
                     await _gameRepository.AddAsync(game);
+                    
+                    // Note: game.GameId should be populated by the database after AddAsync
+                    
+                    // 2. Create companions for this game
+                    var companionIds = new List<int>();
+                    foreach (var detectedCompanion in detectedGame.DetectedCompanions.Where(c => !c.AlreadyExists))
+                    {
+                        try
+                        {
+                            var companion = new Companion
+                            {
+                                GameId = game.GameId, // Associate with this specific game
+                                Name = detectedCompanion.Name,
+                                Type = detectedCompanion.Type,
+                                PathOrURL = detectedCompanion.ExecutablePath,
+                                LaunchHelper = null, // DetectedCompanion doesn't have this
+                                Browser = null, // DetectedCompanion doesn't have this  
+                                OpenInNewWindow = false // DetectedCompanion doesn't have this
+                            };
+
+                            await _companionRepository.AddAsync(companion);
+                            companionIds.Add(companion.CompanionId);
+                            
+                            Debug.WriteLine($"Added companion '{companion.Name}' for game '{game.Name}'");
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Error adding companion {detectedCompanion.Name} for game {game.Name}: {ex.Message}");
+                        }
+                    }
+
+                    // 3. Create default profile (no companions)
+                    var defaultProfile = new Profile
+                    {
+                        GameId = game.GameId,
+                        ProfileName = "Default",
+                        CommandLineArgs = detectedGame.GameArgs
+                    };
+                    await _profilesRepository.AddAsync(defaultProfile);
+                    
+                    Debug.WriteLine($"Created default profile for game '{game.Name}'");
+
+                    // 4. Create full profile with all companions (if any companions were detected)
+                    if (companionIds.Any())
+                    {
+                        var fullProfile = new Profile
+                        {
+                            GameId = game.GameId,
+                            ProfileName = "With Companions",
+                            CommandLineArgs = detectedGame.GameArgs
+                        };
+                        await _profilesRepository.AddAsync(fullProfile);
+
+                        // 5. Associate all companions with the full profile
+                        foreach (var companionId in companionIds)
+                        {
+                            var companionProfile = new CompanionProfile
+                            {
+                                ProfileId = fullProfile.ProfileId,
+                                CompanionId = companionId,
+                                IsEnabled = true
+                            };
+                            await _companionProfileRepository.AddAsync(companionProfile);
+                        }
+                        
+                        Debug.WriteLine($"Created 'With Companions' profile for game '{game.Name}' with {companionIds.Count} companions");
+                    }
+
                     addedCount++;
+                    Debug.WriteLine($"Successfully added game '{game.Name}' with {detectedGame.DetectedCompanions.Count} companions and profiles");
                 }
                 catch (Exception ex)
                 {

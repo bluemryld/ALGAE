@@ -41,6 +41,9 @@ namespace ALGAE.ViewModels
         [ObservableProperty]
         private string _addButtonText = "Add Selected Games";
 
+        [ObservableProperty]
+        private string _profileDescription = "Each game will get a 'Default' profile and a 'With Companions' profile (if companions are detected).";
+
         public event EventHandler<bool>? CloseRequested;
 
         public GameVerificationViewModel(List<DetectedGame> detectedGames)
@@ -88,11 +91,12 @@ namespace ALGAE.ViewModels
             var itemText = "";
             if (SelectedCount > 0 && SelectedCompanionCount > 0)
             {
-                itemText = $"Add {SelectedCount} Games + {SelectedCompanionCount} Companions";
+                itemText = $"Add {SelectedCount} Games + {SelectedCompanionCount} Companions (with profiles)";
             }
             else if (SelectedCount > 0)
             {
-                itemText = SelectedCount == 1 ? "Add 1 Game" : $"Add {SelectedCount} Games";
+                var gameText = SelectedCount == 1 ? "1 Game" : $"{SelectedCount} Games";
+                itemText = $"Add {gameText} (with profiles)";
             }
             else if (SelectedCompanionCount > 0)
             {

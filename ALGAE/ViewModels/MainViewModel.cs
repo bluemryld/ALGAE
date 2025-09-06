@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using ALGAE.Views;
 using Microsoft.Extensions.DependencyInjection;
 using ALGAE.DAL.Repositories;
+using ALGAE.Services;
 using System.Windows;
 
 namespace ALGAE.ViewModels
@@ -13,6 +14,7 @@ namespace ALGAE.ViewModels
         private object? _currentView;
         private MenuItem? _selectedMenuItem;
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILoggingService _logger;
 
         public ObservableCollection<MenuItem> MenuItems { get; set; }
         
@@ -21,7 +23,7 @@ namespace ALGAE.ViewModels
             get => _currentView;
             set 
             {
-                System.Diagnostics.Debug.WriteLine($"Setting CurrentView to: {value?.GetType().Name ?? "null"}");
+                _logger.LogDebug("MainViewModel", $"Setting CurrentView to: {value?.GetType().Name ?? "null"}");
                 SetProperty(ref _currentView, value);
             }
         }
@@ -31,18 +33,23 @@ namespace ALGAE.ViewModels
             get => _selectedMenuItem;
             set
             {
-                System.Diagnostics.Debug.WriteLine($"Setting SelectedMenuItem to: {value?.Name ?? "null"}");
+                _logger.LogInformation("MainViewModel", $"SelectedMenuItem setter called with: {value?.Name ?? "null"}");
                 if (SetProperty(ref _selectedMenuItem, value))
                 {
-                    System.Diagnostics.Debug.WriteLine($"SelectedMenuItem changed, switching view to: {value?.Name ?? "null"}");
+                    _logger.LogInformation("MainViewModel", $"SelectedMenuItem changed, switching view to: {value?.Name ?? "null"}");
                     SwitchView(_selectedMenuItem);
+                }
+                else
+                {
+                    _logger.LogDebug("MainViewModel", "SelectedMenuItem setter called but value was the same, no change");
                 }
             }
         }
 
-        public MainViewModel(IServiceProvider serviceProvider)
+        public MainViewModel(IServiceProvider serviceProvider, ILoggingService logger)
         {
             _serviceProvider = serviceProvider;
+            _logger = logger;
             
             // Initialize menu items
             MenuItems = new ObservableCollection<MenuItem>
@@ -52,6 +59,7 @@ namespace ALGAE.ViewModels
                 new MenuItem { Name = "Signatures", ViewName = "Signatures", Icon = "pack://application:,,,/Resources/signatures_icon.png" },
                 new MenuItem { Name = "Companions", ViewName = "Companions", Icon = "pack://application:,,,/Resources/apps_icon.png" },
                 new MenuItem { Name = "Launcher", ViewName = "Launcher", Icon = "pack://application:,,,/Resources/launcher_icon.png" },
+                new MenuItem { Name = "Settings", ViewName = "Settings", Icon = "pack://application:,,,/Resources/settings_icon.png" },
             };
 
             // Set initial view
@@ -59,7 +67,7 @@ namespace ALGAE.ViewModels
             
             // Set default selection
             _selectedMenuItem = MenuItems.FirstOrDefault();
-            System.Diagnostics.Debug.WriteLine($"MainViewModel constructor: Selected menu item set to: {_selectedMenuItem?.Name ?? "null"}");
+            _logger.LogInformation("MainViewModel", $"MainViewModel initialized. Selected menu item: {_selectedMenuItem?.Name ?? "null"}");
         }
         
         [RelayCommand]
@@ -89,6 +97,32 @@ namespace ALGAE.ViewModels
             if (companionsMenuItem != null)
             {
                 SelectedMenuItem = companionsMenuItem;
+            }
+        }
+        
+        [RelayCommand]
+        private void NavigateToSignatures()
+        {
+            _logger.LogInformation("MainViewModel", "NavigateToSignatures: Command triggered");
+            var signaturesMenuItem = MenuItems.FirstOrDefault(m => m.ViewName == "Signatures");
+            _logger.LogDebug("MainViewModel", $"NavigateToSignatures: Found menu item: {signaturesMenuItem?.Name ?? "null"}");
+            if (signaturesMenuItem != null)
+            {
+                _logger.LogDebug("MainViewModel", $"NavigateToSignatures: Setting SelectedMenuItem to {signaturesMenuItem.Name}");
+                SelectedMenuItem = signaturesMenuItem;
+            }
+        }
+        
+        [RelayCommand]
+        private void NavigateToSettings()
+        {
+            _logger.LogInformation("MainViewModel", "NavigateToSettings: Command triggered");
+            var settingsMenuItem = MenuItems.FirstOrDefault(m => m.ViewName == "Settings");
+            _logger.LogDebug("MainViewModel", $"NavigateToSettings: Found menu item: {settingsMenuItem?.Name ?? "null"}");
+            if (settingsMenuItem != null)
+            {
+                _logger.LogDebug("MainViewModel", $"NavigateToSettings: Setting SelectedMenuItem to {settingsMenuItem.Name}");
+                SelectedMenuItem = settingsMenuItem;
             }
         }
         
@@ -206,30 +240,54 @@ namespace ALGAE.ViewModels
         {
             try
             {
-                var gameSignaturesViewModel = _serviceProvider.GetRequiredService<GameSignaturesViewModel>();
+                _logger.LogDebug("MainViewModel", "CreateGameSignaturesView: Starting to create view");
+                var gameSignaturesViewModel = _serviceProvider.GetRequiredService<ALGAE.ViewModels.GameSignaturesViewModel>();
+                _logger.LogDebug("MainViewModel", "CreateGameSignaturesView: ViewModel resolved successfully");
                 var gameSignaturesView = new GameSignaturesView { DataContext = gameSignaturesViewModel };
+                _logger.LogDebug("MainViewModel", "CreateGameSignaturesView: View created successfully");
                 return gameSignaturesView;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error creating GameSignaturesView: {ex.Message}");
+                _logger.LogError("MainViewModel", $"Error creating GameSignaturesView: {ex.Message}", ex);
+                return null;
+            }
+        }
+
+        private object? CreateSettingsView()
+        {
+            try
+            {
+                _logger.LogDebug("MainViewModel", "CreateSettingsView: Starting to create view");
+                var settingsViewModel = _serviceProvider.GetRequiredService<ALGAE.ViewModels.SettingsViewModel>();
+                _logger.LogDebug("MainViewModel", "CreateSettingsView: ViewModel resolved successfully");
+                var settingsView = new SettingsView { DataContext = settingsViewModel };
+                _logger.LogDebug("MainViewModel", "CreateSettingsView: View created successfully");
+                return settingsView;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("MainViewModel", $"Error creating SettingsView: {ex.Message}", ex);
                 return null;
             }
         }
 
         private void SwitchView(MenuItem? menuItem)
         {
-            System.Diagnostics.Debug.WriteLine($"SwitchView called with menuItem: {menuItem?.Name ?? "null"}");
+            _logger.LogInformation("MainViewModel", $"SwitchView called with menuItem: {menuItem?.Name ?? "null"}");
             if (menuItem != null && !string.IsNullOrEmpty(menuItem.ViewName))
             {
-                System.Diagnostics.Debug.WriteLine($"Switching to view: {menuItem.ViewName}");
+                _logger.LogInformation("MainViewModel", $"Switching to view: {menuItem.ViewName}");
                 
                 // Skip launcher as it opens in separate window
                 if (menuItem.ViewName == "Launcher")
                 {
+                    _logger.LogInformation("MainViewModel", "Opening Launcher in separate window");
                     NavigateToLauncher();
                     return;
                 }
+                
+                _logger.LogDebug("MainViewModel", $"Creating view for ViewName: '{menuItem.ViewName}'");
                 
                 object? newView = menuItem.ViewName switch
                 {
@@ -237,18 +295,25 @@ namespace ALGAE.ViewModels
                     "Games" => CreateGamesView(),
                     "Signatures" => CreateGameSignaturesView(),
                     "Companions" => CreateCompanionsView(),
+                    "Settings" => CreateSettingsView(),
                     _ => null
                 };
+                
+                _logger.LogDebug("MainViewModel", $"Created view: {(newView != null ? newView.GetType().Name : "null")}");
                 
                 if (newView != null)
                 {
                     CurrentView = newView;
-                    System.Diagnostics.Debug.WriteLine($"Successfully set CurrentView to: {newView.GetType().Name}");
+                    _logger.LogInformation("MainViewModel", $"Successfully set CurrentView to: {newView.GetType().Name}");
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine($"Failed to create view for: {menuItem.ViewName}");
+                    _logger.LogError("MainViewModel", $"Failed to create view for ViewName: '{menuItem.ViewName}'");
                 }
+            }
+            else
+            {
+                _logger.LogWarning("MainViewModel", "SwitchView called with null or empty ViewName");
             }
         }
     }

@@ -18,8 +18,11 @@
       <!-- Value Converters -->
       <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
       <local:InvertedBooleanConverter x:Key="InvertedBooleanConverter" />
+      <local:InvertedBooleanConverter x:Key="InverseBooleanConverter" />
       <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter" />
       <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+      <local:DatabaseTypeConverter x:Key="DatabaseTypeConverter" />
+      <local:BooleanToYesNoConverter x:Key="BooleanToYesNoConverter" />
     </ResourceDictionary>
   </Application.Resources>
 </Application>
